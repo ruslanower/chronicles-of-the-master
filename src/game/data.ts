@@ -37,14 +37,14 @@ export const campaign = raw as unknown as {
 export const STAT_LABEL: Record<keyof Stats, string> = { str: "СИЛ", agi: "СПР", int: "РОЗ", cha: "ХАР" };
 
 const LOC: Record<string, string> = {
-  scene_tavern_cellar: "loc_01_secret_tavern.jpg",
-  scene_alley_manhole: "loc_02_alley_manhole.jpg",
-  scene_sewer_outpost: "loc_05_sewer_outpost.jpg",
-  scene_cockroach_pit: "loc_06_cockroach_pit.jpg",
-  scene_stablemaster_yard: "loc_07_stablemaster_yard.jpg",
-  scene_castle_feast: "loc_09_castle_feast.jpg",
-  scene_castle_kitchen_hood: "loc_11_castle_kitchen_hood.jpg",
-  scene_castle_plaza_evac: "loc_12_castle_plaza_evac.jpg",
+  scene_tavern_cellar: "loc_01_secret_tavern.webp",
+  scene_alley_manhole: "loc_02_alley_manhole.webp",
+  scene_sewer_outpost: "loc_05_sewer_outpost.webp",
+  scene_cockroach_pit: "loc_06_cockroach_pit.webp",
+  scene_stablemaster_yard: "loc_07_stablemaster_yard.webp",
+  scene_castle_feast: "loc_09_castle_feast.webp",
+  scene_castle_kitchen_hood: "loc_11_castle_kitchen_hood.webp",
+  scene_castle_plaza_evac: "loc_12_castle_plaza_evac.webp",
 };
 export const locationSrc = (bg: string) => `/game/locations/${LOC[bg] ?? LOC["scene_tavern_cellar"]}`;
 
