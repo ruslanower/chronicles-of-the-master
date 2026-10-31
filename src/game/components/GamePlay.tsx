@@ -1,11 +1,11 @@
 import { useEffect, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { ArrowLeft, BookOpen, Backpack, Send, Swords, MessageCircle, X, LoaderCircle, Crown } from "lucide-react";
+import { ArrowLeft, BookOpen, Backpack, Send, Swords, MessageCircle, X, LoaderCircle, Crown, Target, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { masterTurn } from "@/lib/master.functions";
 import { campaign, heroSprite, itemSrc, ROMAN } from "../data";
 import { rollD20, type GameState } from "../rules";
-import { advanceAct, resolveTurn } from "../session";
+import { advanceAct, resolveTurn, retryAct } from "../session";
 import { GameScene } from "./GameScene";
 
 export function GamePlay({ state, actReady, onUpdate, onExit }: { state: GameState; actReady: boolean; onUpdate: (state: GameState, ready: boolean) => void; onExit: () => void }) {
@@ -46,7 +46,7 @@ export function GamePlay({ state, actReady, onUpdate, onExit }: { state: GameSta
     finally { lock.current = false; setBusy(false); }
   }
 
-  return <main className="min-h-screen bg-background">
+  return <main className="min-h-dvh bg-background">
     <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-4 md:px-8">
       <div className="flex items-center gap-4"><Button variant="ghost" size="icon" aria-label="До головного меню" title="До головного меню" onClick={onExit} disabled={busy}><ArrowLeft /></Button><div><p className="font-display text-[0.6rem] text-gold">ХРОНІКИ МАЙСТРА</p><p className="mt-1 text-sm text-muted-foreground">Корона Чорної Зірки</p></div></div>
       <div className="flex items-center gap-3"><span className="hidden text-sm text-muted-foreground sm:block">АКТ {ROMAN[state.actIndex + 1]} • ХІД {state.log.filter((e) => e.kind === "action" || e.kind === "say").length + 1}</span><Button variant="outline" size="icon" title="Літопис" aria-label="Літопис" onClick={() => setPanel("journal")}><BookOpen /></Button><Button variant="outline" size="icon" title="Інвентар" aria-label="Інвентар" onClick={() => setPanel("inventory")}><Backpack /></Button></div>
@@ -63,18 +63,20 @@ export function GamePlay({ state, actReady, onUpdate, onExit }: { state: GameSta
         </aside>
         <section className="min-w-0 p-5 md:p-7" aria-label="Розповідь Майстра">
           <div className="flex items-center justify-between gap-3"><h2 className="font-display text-[0.65rem] text-gold">✦ МАЙСТЕР РОЗПОВІДАЄ</h2><span className="text-xs text-muted-foreground">{busy ? "Пише історію…" : "Королівство слухає"}</span></div>
+          <div className="mt-3 flex items-start gap-2 border border-border bg-ink/60 p-3 text-sm text-muted-foreground"><Target className="mt-0.5 h-4 w-4 shrink-0 text-gold" /><span><span className="text-gold">Мета акту:</span> {act.objective}</span></div>
+          <div className="mt-3 flex gap-1" aria-label={`Акт ${state.actIndex + 1} з ${campaign.acts.length}`}>{campaign.acts.map((a, i) => <span key={a.actNumber} className={`h-1.5 flex-1 ${i < state.actIndex ? "bg-gold" : i === state.actIndex ? "bg-gold/50" : "bg-secondary"}`} />)}</div>
           <div className="mt-4 max-h-56 overflow-y-auto pr-3" aria-live="polite">
             <p className="story-copy text-lg leading-relaxed text-parchment md:text-xl">{latest?.text}</p>
             {state.log.filter((e) => e.kind === "roll").at(-1) && <p className="mt-3 text-sm text-gold">{state.log.filter((e) => e.kind === "roll").at(-1)?.text}</p>}
             {busy && <p className="mt-4 flex items-center gap-2 text-astral"><LoaderCircle className="h-4 w-4 animate-spin" />Майстер вплітає ваш вибір в історію…</p>}
             <div ref={end} />
           </div>
-          {state.status !== "playing" ? <div className="mt-6 border-t border-gold-deep pt-6"><Crown className="mb-4 h-8 w-8 text-gold" /><h2 className="title-glow text-lg">{state.status === "victory" ? "Королівство вільне!" : "Згаслий ліхтар"}</h2><p className="mt-3 text-parchment">{state.status === "victory" ? "Корона впала. Та історія вашого загону житиме у літописі." : "Загін упав, але легенди народжуються з нової спроби."}</p><Button className="mt-5" variant="pixel" onClick={onExit}>До головного меню</Button></div>
+          {state.status !== "playing" ? <div className="mt-6 border-t border-gold-deep pt-6"><Crown className="mb-4 h-8 w-8 text-gold" /><h2 className="title-glow text-lg">{state.status === "victory" ? "Королівство вільне!" : "Згаслий ліхтар"}</h2><p className="mt-3 text-parchment">{state.status === "victory" ? "Корона впала. Та історія вашого загону житиме у літописі." : "Загін упав, але легенди народжуються з нової спроби."}</p><div className="mt-5 flex flex-wrap gap-3">{state.status === "defeat" && <Button variant="pixel" onClick={() => { setDice(null); onUpdate(retryAct(state), false); }}><RotateCcw />Спробувати акт знову</Button>}<Button variant="pixelGhost" onClick={onExit}>До головного меню</Button></div></div>
             : actReady ? <div className="mt-6 border-t border-gold-deep pt-5"><p className="mb-4 text-gold">✦ Мету акту виконано</p><Button variant="pixel" onClick={() => { setDice(null); onUpdate(advanceAct(state), false); }}>Продовжити • Акт {ROMAN[state.actIndex + 2]} →</Button></div>
             : <form className="mt-6 border-t border-border pt-5" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
               <div className="flex items-center justify-between gap-3"><div className="flex gap-2"><Button type="button" variant="pixelGhost" data-active={mode === "action"} aria-pressed={mode === "action"} disabled={busy} onClick={() => setMode("action")}><Swords />Дія</Button><Button type="button" variant="pixelGhost" data-active={mode === "say"} aria-pressed={mode === "say"} disabled={busy} onClick={() => setMode("say")}><MessageCircle />Сказати</Button></div><div key={`${dice}-${busy}`} className={`dice-face flex h-14 w-14 shrink-0 items-center justify-center border-2 border-gold-deep font-display text-lg text-gold ${busy && dice !== null ? "animate-dice" : ""}`} aria-label={dice === null ? "D20" : `Кидок D20: ${dice}`}>{dice ?? <span className="text-[0.6rem]">D20</span>}</div></div>
               <label className="mt-5 block text-sm text-muted-foreground" htmlFor="hero-turn">{hero.name}</label>
-              <div className="mt-2 flex items-end gap-3"><textarea id="hero-turn" value={text} onChange={(e) => setText(e.target.value)} maxLength={600} disabled={busy} rows={2} placeholder={mode === "action" ? "Я перевертаю стіл і прикриваю чорний хід…" : "Капітане, ви шукаєте не тих людей…"} className="story-copy min-h-20 w-full resize-y rounded-sm border border-input bg-ink p-3 text-base text-foreground outline-none focus:border-ring disabled:opacity-60" /><Button variant="pixel" type="submit" disabled={busy || !text.trim()} className="min-h-20 shrink-0 px-4" aria-label={mode === "action" ? "Кинути D20 і діяти" : "Сказати"} title={mode === "action" ? "Кинути D20 і діяти" : "Сказати"}>{busy ? <LoaderCircle className="animate-spin" /> : <Send />}</Button></div>
+              <div className="mt-2 flex items-end gap-3"><textarea id="hero-turn" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void submit(); } }} enterKeyHint="send" maxLength={600} disabled={busy} rows={2} placeholder={mode === "action" ? "Я перевертаю стіл і прикриваю чорний хід…" : "Капітане, ви шукаєте не тих людей…"} className="story-copy min-h-20 w-full resize-y rounded-sm border border-input bg-ink p-3 text-base text-foreground outline-none focus:border-ring disabled:opacity-60" /><Button variant="pixel" type="submit" disabled={busy || !text.trim()} className="min-h-20 shrink-0 px-4" aria-label={mode === "action" ? "Кинути D20 і діяти" : "Сказати"} title={mode === "action" ? "Кинути D20 і діяти" : "Сказати"}>{busy ? <LoaderCircle className="animate-spin" /> : <Send />}</Button></div>
               <div className="mt-4 flex flex-wrap gap-2">{state.suggestions.map((s) => <Button key={s} variant="ghost" type="button" disabled={busy} className="h-auto max-w-full whitespace-normal border border-border px-3 py-2 text-left text-xs leading-relaxed text-muted-foreground" onClick={() => { setMode("action"); setText(s.slice(0, 600)); }}>↗ {s}</Button>)}</div>
               {error && <p role="alert" className="mt-4 text-sm text-hp">{error}</p>}
             </form>}

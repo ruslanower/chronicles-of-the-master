@@ -62,3 +62,11 @@ export function restoreGame(raw: string): { state: GameState; actReady: boolean 
     return { state: { ...saved.state, party }, actReady: saved.actReady };
   } catch { return null; }
 }
+
+/** After defeat: heal the party to full and replay the current act from its start. */
+export function retryAct(state: GameState): GameState {
+  if (state.status !== "defeat") return state;
+  const act = campaign.acts[state.actIndex];
+  const party = state.party.map((h) => ({ ...h, hp: h.maxHp }));
+  return { ...state, party, turn: 0, progress: 0, status: "playing", suggestions: act?.sandboxHints.slice(0, 3) ?? [], log: [...state.log, { id: (state.log.at(-1)?.id ?? 0) + 1, who: "Майстер", kind: "system" as const, text: `Ліхтар спалахує знову. ${act?.title ?? ""}` }].slice(-150) };
+}
