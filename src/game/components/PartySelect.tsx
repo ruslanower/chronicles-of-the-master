@@ -13,7 +13,7 @@ export function PartySelect({ onBack, onConfirm }: { onBack: () => void; onConfi
   };
 
   return (
-    <main className="min-h-screen bg-night px-4 py-8 md:px-10">
+    <main className="min-h-dvh bg-night px-4 py-8 pb-28 md:px-10 lg:pb-8">
       <div className="mx-auto max-w-6xl">
         <div className="flex items-center justify-between">
           <Button variant="pixelGhost" onClick={onBack}>
@@ -35,7 +35,7 @@ export function PartySelect({ onBack, onConfirm }: { onBack: () => void; onConfi
                   onMouseEnter={() => setFocus(h)}
                   aria-pressed={on}
                   aria-label={h.name}
-                  className={`pixel-frame group relative h-auto whitespace-normal flex flex-col items-center p-4 pt-6 text-left transition-transform hover:-translate-y-1 ${on ? "pixel-frame-gold" : ""}`}
+                  className={`pixel-frame group relative h-auto hover:bg-transparent focus-visible:bg-transparent whitespace-normal flex flex-col items-center p-4 pt-6 text-left transition-transform hover:-translate-y-1 ${on ? "pixel-frame-gold" : ""}`}
                 >
                   {on && (
                     <span className="absolute right-2 top-2 bg-gold px-2 py-1 font-display text-[0.55rem] text-primary-foreground">
@@ -90,6 +90,11 @@ export function PartySelect({ onBack, onConfirm }: { onBack: () => void; onConfi
               Почати Акт I
             </Button>
           </aside>
+        </div>
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-ink/95 p-3 backdrop-blur lg:hidden">
+          <Button variant="pixel" className="w-full" disabled={!picked.length} onClick={() => onConfirm(campaign.heroes.filter((h) => picked.includes(h.id)).sort((a, b) => picked.indexOf(a.id) - picked.indexOf(b.id)))}>
+            {picked.length ? `Почати Акт I • ${picked.length}/4` : "Оберіть 1–4 героїв"}
+          </Button>
         </div>
       </div>
     </main>
