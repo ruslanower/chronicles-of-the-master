@@ -1,4 +1,4 @@
-import keyArt from "@/assets/key-art.jpg";
+import keyArt from "@/assets/key-art.webp";
 import { Button } from "@/components/ui/button";
 import { campaign } from "../data";
 import { Particles } from "./Particles";
