@@ -1,0 +1,1087 @@
+{
+ "id": "black-star-crown-01",
+ "type": "monthly",
+ "monthLabel": "MAIN CAMPAIGN • 8 ACTS",
+ "title": "Crown of the Black Star: Shadow Uprising",
+ "subtitle": "A ruthless usurper slaughtered the old king and launched a merciless hunt against all sorcerers and mythic kin. Break through a tavern raid, forge an alliance with the underground Cockroach King, smuggle black-star-marked white steeds into the prince's feast, and sabotage the castle's grand flue—saving innocent lives in the process!",
+ "duration": "45–60 min",
+ "playersRange": "1–4 players",
+ "difficulty": "Tactical / Stealth / Diplomacy",
+ "priceLabel": "Included with Subscription",
+ "isUnlocked": true,
+ "accentColor": "#10b981",
+ "coverGradient": "linear-gradient(135deg, #064e3b 0%, #0f172a 55%, #31102f 100%)",
+ "worldRulesForAI": "\n      You are the Game Master in a dark fantasy realm (\"Crown of the Black Star\").\n      WORLD LORE:\n      1. The newly crowned Usurper treacherously murdered the old benevolent king and claimed the throne alongside his brutal Iron Guard. The populace knows the bitter truth, yet cowers under threat of execution.\n      2. The tyrant decreed a purge against all spellcasters and mythic beings, intending to purge the kingdom of all but mundane mortals. All player characters are magical or mythical beings living in hiding.\n      3. ADAPTIVE FUNNELING RULE:\n         - Players may act together (on one screen) or split up (across 1 to 4 locations simultaneously).\n         - If a player climbs onto a roof and lingers: freezing rain pours down, roof tiles are slick with grime, and Iron Guard crossbowmen seal off the streets below—the only safe descent leads down a drainpipe to a sewer manhole.\n         - In the Cockroach King's pit (Act IV), combat is impossible: hundreds of skittering roaches surround the party, yet their King offers an alliance against the tyrant, granting the heroes a flask of 'Abyssal Breath'.\n         - Mechanics of the 'Abyssal Breath' flask: Magical beings (the heroes) smell nothing and possess complete 100% immunity. Mundane mortals trapped in the castle perish within 1 hour. After 2 hours, the gas dissipates completely.\n         - Near the sewer outflow (Act V), the Stablemaster prepares thoroughbred WHITE STEEDS WITH A BLACK STAR ON THEIR FOREHEAD for the birthday of the king's middle son. The Usurper executed the Stablemaster's sorceress wife, leaving him with young children; thus, he secretly surrenders washed knightly plate and the steeds to the party.\n         - Inside the castle (Acts VI–VIII), the heroes present the horses to the prince, stable them in the rear courtyard, locate the CASTLE'S GRAND FLUE in the adjacent kitchen, lure the innocent cooks and servants out for 2 hours (using jester masks, sleeping dust, or a mock fair), shatter the flask inside the flue, and bar the castle gates shut for 2 hours.\n    ",
+ "acts": [
+  {
+   "actNumber": 1,
+   "title": "Act I. Raid at the Snuffed Lantern Tavern",
+   "locationName": "Clandestine Tavern 'The Snuffed Lantern'",
+   "bgType": "scene_tavern_cellar",
+   "hasRightSideInteraction": true,
+   "rightEntities": [
+    {
+     "name": "The King's Iron Guard",
+     "role": "Mage Hunters",
+     "emoji": "⚔️",
+     "hp": 30,
+     "maxHp": 30,
+     "type": "enemy"
+    },
+    {
+     "name": "Secret Patrons",
+     "role": "Panicking Sorcerers",
+     "emoji": "🧙",
+     "hp": 15,
+     "maxHp": 15,
+     "type": "crowd"
+    }
+   ],
+   "objective": "A squad of the Iron Guard smashes through the tavern doors wielding antimagic shackles! Outwit, sedate, bar, or cut down the knights to break free into the rain-swept alley.",
+   "sandboxHints": [
+    "Hurl 'Twilight' smoke pellets at the guards' boots and slip through the cellar escape hatch",
+    "Enthrall the raiders with a slumbering melody from the Lute of Drowsy Whispers and barricade the path with heavy oak tables",
+    "Sever the back door's iron bolt with the Silver Saber and shield the retreat using the Tower Shield",
+    "Conjure a phantom mirror-double via the Twisted Glass Ring to lead the knights deep into the cellar maze"
+   ]
+  },
+  {
+   "actNumber": 2,
+   "title": "Act II. Night Alley: Sewers, Rooftops, or Streets",
+   "locationName": "Narrow Shadow Alley & Cast-Iron Manhole",
+   "bgType": "scene_alley_manhole",
+   "hasRightSideInteraction": true,
+   "rightEntities": [
+    {
+     "name": "Sewer Manhole",
+     "role": "Sanctuary from the Knights",
+     "emoji": "🕳️",
+     "hp": 50,
+     "maxHp": 50,
+     "type": "object"
+    },
+    {
+     "name": "Crossbow Patrol",
+     "role": "Street Sweep Patrol",
+     "emoji": "🏹",
+     "hp": 35,
+     "maxHp": 35,
+     "type": "enemy"
+    }
+   ],
+   "objective": "You burst from the tavern beneath a freezing downpour. Two main paths lie open (or split the party): drop into the foul, knight-free sewers or brave the rooftops and cobblestones under heavy disguise.",
+   "sandboxHints": [
+    "Pry open the heavy cast-iron grate using the Mountain Giant's Girdle and drop down into the tunnels",
+    "Cast a Grappling Hook onto the slick shingle roofs to scout the patrol patterns from above",
+    "Sprout Wild Briar Seeds behind the party to seal the alleyway against oncoming pursuers",
+    "Unfurl the 'Muffled Deceit' Scroll to creep along the mossy masonry directly toward the collector"
+   ]
+  },
+  {
+   "actNumber": 3,
+   "title": "Act III. Dank Tunnels and Two Giant Cockroach Sentinels",
+   "locationName": "Subterranean Vaults of the City Sewers",
+   "bgType": "scene_sewer_outpost",
+   "hasRightSideInteraction": true,
+   "rightEntities": [
+    {
+     "name": "2 Cockroach Sentinels",
+     "role": "Keepers of the Chitin Throne",
+     "emoji": "🪳",
+     "hp": 40,
+     "maxHp": 40,
+     "type": "enemy"
+    },
+    {
+     "name": "Chitinous Barricade",
+     "role": "Underworld Outpost",
+     "emoji": "🛡️",
+     "hp": 30,
+     "maxHp": 30,
+     "type": "object"
+    }
+   ],
+   "objective": "The sewers harbor no royal hunters, but the way forward is barred by TWO MASSIVE COCKROACH SENTINELS clad in thick chitinous plating, guarding the threshold to their subterranean kingdom.",
+   "sandboxHints": [
+    "Raise the Staff of Chitinous Whispers and commune with the sentinels in their clicking tongue",
+    "Present fragrant Treant Honey-Resin cakes to the chitinous guards as a peace offering",
+    "Kindle the Firefly Walnut Lantern to reveal the shimmering Hive's Amber Heart",
+    "Bypass the outpost entirely by navigating a high sewer ledge using Feline Goggles"
+   ]
+  },
+  {
+   "actNumber": 4,
+   "title": "Act IV. The Cockroach King's Pit and the 'Abyssal Breath' Flask",
+   "locationName": "Subterranean Throne Pit of the Cockroach King",
+   "bgType": "scene_cockroach_pit",
+   "hasRightSideInteraction": true,
+   "rightEntities": [
+    {
+     "name": "The Cockroach King",
+     "role": "Sovereign of the Underworld",
+     "emoji": "👑",
+     "hp": 99,
+     "maxHp": 99,
+     "type": "boss"
+    },
+    {
+     "name": "Countless Roaches",
+     "role": "Skittering Swarm",
+     "emoji": "🪳",
+     "hp": 99,
+     "maxHp": 99,
+     "type": "crowd"
+    }
+   ],
+   "objective": "The flagstones give way, plunging you straight into the cavernous lair before the throne of THE COCKROACH KING! Hundreds of skittering carapaces surround you—combat is sheer suicide. Broker a pact against the human tyrant to obtain the emerald flask of 'Abyssal Breath'.",
+   "sandboxHints": [
+    "Bow low before the Cockroach King and propose a joint covenant against the human oppressor",
+    "Reveal that the usurper is poisoning the city's underbelly and butchering all magical kin",
+    "Inquire about the venomous properties of 'Abyssal Breath' (fatal to mortals in 1 hour; dissolves entirely in 2)",
+    "Pledge eternal sanctuary to the deep subterranean vaults once the tyrant is overthrown"
+   ]
+  },
+  {
+   "actNumber": 5,
+   "title": "Act V. The Stablemaster, Washed Plate, and White Steeds with the Black Star",
+   "locationName": "Abandoned Waystation by the Sewer Outflow",
+   "bgType": "scene_stablemaster_yard",
+   "hasRightSideInteraction": true,
+   "rightEntities": [
+    {
+     "name": "Stablemaster Rodan",
+     "role": "Widower of a Slain Witch",
+     "emoji": "🧔",
+     "hp": 25,
+     "maxHp": 25,
+     "type": "npc"
+    },
+    {
+     "name": "Black-Star White Steeds",
+     "role": "Gift for the Prince",
+     "emoji": "🐎",
+     "hp": 40,
+     "maxHp": 40,
+     "type": "npc"
+    }
+   ],
+   "objective": "Emerging from the depths with the venom flask, you find the Stablemaster tending a rare breed of THOROUGHBRED WHITE HORSES MARKED WITH BLACK STARS, raised for the royal army. The Usurper executed his sorceress wife, leaving him with starving children. Secure washed knightly plate and the majestic steeds from him to slip into the fortress!",
+   "sandboxHints": [
+    "Offer condolences to Rodan, don the cleansed Iron Guard plate, and swear vengeance upon the tyrant",
+    "Feed the Star-Marked White Steeds fragrant royal mint oats to earn their trust",
+    "Hold up the Silver Horseshoe Charm so the regal mounts follow you willingly",
+    "Don the washed knight armor and lead the magnificent steeds toward the citadel gates"
+   ]
+  },
+  {
+   "actNumber": 6,
+   "title": "Act VI. The Citadel Gate and the Birthday Feast of the Middle Son",
+   "locationName": "Grand Citadel Courtyard • The Prince's Feast",
+   "bgType": "scene_castle_feast",
+   "hasRightSideInteraction": true,
+   "rightEntities": [
+    {
+     "name": "The Usurper King",
+     "role": "Feasting Tyrant",
+     "emoji": "🤴",
+     "hp": 80,
+     "maxHp": 80,
+     "type": "boss"
+    },
+    {
+     "name": "The King's Middle Son",
+     "role": "The Birthday Prince",
+     "emoji": "👑",
+     "hp": 40,
+     "maxHp": 40,
+     "type": "npc"
+    }
+   ],
+   "objective": "The gatekeepers glance carelessly over your armor and wave the magnificent horses through. Inside, the bailey roars with celebration—it is the MIDDLE PRINCE'S birthday feast! Parading the star-marked white steeds before the youth will compel the King to order you into the rear royal stables.",
+   "sandboxHints": [
+    "Solemnly present the Black-Star Steeds before the dais so the prince may claim his prize",
+    "Flash the Royal Courier's Wax Seal and render a crisp salute without raising your visors",
+    "Discreetly survey the approach to the royal stables and the adjacent castle kitchens",
+    "Heed the King's command and guide the warhorses to the rear courtyard stalls"
+   ]
+  },
+  {
+   "actNumber": 7,
+   "title": "Act VII. The Stables, the Kitchens, and the Grand Flue",
+   "locationName": "Royal Stables & Castle Kitchen with Grand Flue",
+   "bgType": "scene_castle_kitchen_hood",
+   "hasRightSideInteraction": true,
+   "rightEntities": [
+    {
+     "name": "Castle's Grand Flue",
+     "role": "Keep Ventilation Network",
+     "emoji": "💨",
+     "hp": 50,
+     "maxHp": 50,
+     "type": "object"
+    },
+    {
+     "name": "Cooks and Scullions",
+     "role": "Innocent Mortals",
+     "emoji": "👨‍🍳",
+     "hp": 20,
+     "maxHp": 20,
+     "type": "npc"
+    }
+   ],
+   "objective": "After hitching the horses in the stalls, you slip into the roasting CASTLE KITCHENS and spot the massive GRAND FLUE overhead, branching into every hall of the citadel! Yet innocent kitchen staff work the hearths—mortals who will perish in 1 hour if exposed. Devise a ruse to evacuate all innocent workers from the fortress for 2 hours!",
+   "sandboxHints": [
+    "Don Court Jester Carnival Masks and proclaim a royal decree: all scullery staff must assemble in the outer square for 2 hours for a secret surprise",
+    "Spike the King's personal wine flagons with Nightshade Slumber Dust so the dazed monarch orders his attendants dismissed",
+    "Unfurl the Deck of Phantom Tarot to orchestrate a dazzling illusory carnival outside the gate, drawing the cooks outside",
+    "Check the draft along the exhaust shafts using the Astral Wind Compass before cracking the glass vial"
+   ]
+  },
+  {
+   "actNumber": 8,
+   "title": "Act VIII. Breath of the Abyss and Two Hours to Freedom",
+   "locationName": "Outer Citadel Plaza • Finale",
+   "bgType": "scene_castle_plaza_evac",
+   "hasRightSideInteraction": true,
+   "rightEntities": [
+    {
+     "name": "Barred Citadel Gates",
+     "role": "Holding the 2-Hour Vigil",
+     "emoji": "🏰",
+     "hp": 60,
+     "maxHp": 60,
+     "type": "object"
+    },
+    {
+     "name": "Evacuated Servants",
+     "role": "Safe Beyond the Walls",
+     "emoji": "🎉",
+     "hp": 30,
+     "maxHp": 30,
+     "type": "crowd"
+    }
+   ],
+   "objective": "The innocent cooks and retainers are safely gathered beyond the gates! Uncork the 'Abyssal Breath' into the kitchen's grand flue, stoke the airflow with astral ash, retreat beyond the threshold, and bar the heavy iron gates shut for exactly 2 hours until the tyrant and his Iron Guard succumb and the toxic fumes clear!",
+   "sandboxHints": [
+    "Uncork 'Abyssal Breath' inside the Grand Flue and scatter a Pouch of Astral Ash to circulate the draft across every royal bedchamber",
+    "Wedge the citadel doors shut from the exterior using Forged Iron Wedges and Heavy Chains for 2 hours",
+    "Entertain the gathered cooks and stable hands with songs on the Lute so none wander back inside prematurely",
+    "Hold the vigil until the 2 hours elapse and the vapors dissolve, then proclaim the kingdom liberated!"
+   ]
+  }
+ ],
+ "npcsAndEnemies": [
+  {
+   "name": "The King's Iron Guard",
+   "type": "Enemy (Acts I–II)",
+   "hp": 30,
+   "ac": 13
+  },
+  {
+   "name": "Two Giant Cockroach Sentinels",
+   "type": "Sewer Guardians (Act III)",
+   "hp": 40,
+   "ac": 12
+  },
+  {
+   "name": "Cockroach King 'Rustlecarapace'",
+   "type": "Underworld Sovereign (Act IV • Dialogue Only)",
+   "hp": 99,
+   "ac": 18
+  },
+  {
+   "name": "Stablemaster Rodan and the Black-Star Steeds",
+   "type": "Ally (Act V)",
+   "hp": 25,
+   "ac": 10
+  },
+  {
+   "name": "Usurper King and the Middle Prince",
+   "type": "Citadel Targets (Acts VI–VIII)",
+   "hp": 80,
+   "ac": 14
+  }
+ ],
+ "heroes": [
+  {
+   "id": "hero_illusionist",
+   "classKey": "bard",
+   "className": "Mystic Illusionist",
+   "name": "Mystic Illusionist",
+   "role": "Illusions, royal hypnosis, and jester guises",
+   "avatarEmoji": "🎭",
+   "color": "#a855f7",
+   "hp": 26,
+   "maxHp": 26,
+   "stats": {
+    "str": 0,
+    "agi": 3,
+    "int": 3,
+    "cha": 4
+   },
+   "equipped": {
+    "weapon": "Lute of Drowsy Whispers (+4 Charisma)",
+    "armor": "Cloak of Twofold Mirages (+3 Agility)",
+    "accessory": "Twisted Glass Ring (+3 Intelligence)"
+   },
+   "skills": [
+    {
+     "name": "Royal Jester's Mirage",
+     "desc": "Projects an illusion of royal heralds or jesters to convincingly command kitchen staff to evacuate the castle for 2 hours."
+    },
+    {
+     "name": "Hypnotic Goblet Whisper",
+     "desc": "Subtly implants a command into the mind of the King or guard captain (such as ordering all servants out of the banquet hall)."
+    }
+   ],
+   "inventory": [
+    {
+     "id": "ill_item_1",
+     "name": "Lute of Drowsy Whispers",
+     "rarityLabel": "Illusionist's Arcane Focus • Equipped",
+     "category": "items",
+     "slot": "weapon",
+     "type": "weapon",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+4 to Charisma and hypnosis",
+     "artKey": "px_lute",
+     "lore": "Carved from pale moon-ash and strung with spun silver. Its delicate chords dull the senses of the Iron Guard and entrance feasting nobles."
+    },
+    {
+     "id": "ill_item_2",
+     "name": "Cloak of Twofold Mirages",
+     "rarityLabel": "Illusionist's Light Vestment • Equipped",
+     "category": "items",
+     "slot": "armor",
+     "type": "armor",
+     "qty": 1,
+     "starred": false,
+     "equipped": true,
+     "bonus": "+3 to Agility and stealth",
+     "artKey": "px_cloak_mirage",
+     "lore": "Woven from shimmering spell-silk, shifting in an instant from a drab gutter-cloak to the vibrant garb of a court entertainer."
+    },
+    {
+     "id": "ill_item_3",
+     "name": "Twisted Glass Ring",
+     "rarityLabel": "Illusionist's Relic • Equipped",
+     "category": "resources",
+     "slot": "accessory",
+     "type": "artifact",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+3 to Intelligence and misdirection",
+     "artKey": "px_ring_mirror",
+     "lore": "Creates a fleeting light-duplicate that sprints in the opposite direction, sowing panic and confusion among pursuing knights."
+    },
+    {
+     "id": "ill_item_4",
+     "name": "Festive Citadel Jester Masks",
+     "rarityLabel": "Special Infiltration Prop",
+     "category": "items",
+     "type": "consumable",
+     "qty": 2,
+     "starred": true,
+     "equipped": false,
+     "bonus": "Evacuates kitchen staff for 2 hours",
+     "artKey": "px_jester_mask",
+     "lore": "Porcelain smiling masks fringed with brass bells. Used to pose as royal buffoons and lead servants safely out of the citadel before the poison is loosed."
+    },
+    {
+     "id": "ill_item_5",
+     "name": "Nightshade Slumber Dust",
+     "rarityLabel": "Alchemical Sleeping Powder",
+     "category": "materials",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Slumbers sentries or befuddles the King",
+     "artKey": "px_sleep_dust",
+     "lore": "Glimmering violet spores harvested from nocturnal moths. Can be puffed into a sentry's visor or sprinkled into banquet wine."
+    },
+    {
+     "id": "ill_item_6",
+     "name": "Deck of Phantom Tarot",
+     "rarityLabel": "Arcane Phantasm Cards",
+     "category": "resources",
+     "type": "consumable",
+     "qty": 3,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Conjures carnival clamor and spark bursts",
+     "artKey": "px_tarot_cards",
+     "lore": "A card tossed onto cobblestones dissolves into a vivid phantom carnival, instantly capturing the crowd's full attention."
+    },
+    {
+     "id": "ill_item_7",
+     "name": "Faerie Tear Phial",
+     "rarityLabel": "Illusionist's Restorative Nectar",
+     "category": "items",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "heal": 12,
+     "bonus": "+12 HP",
+     "artKey": "px_fairy_potion",
+     "lore": "Luminescent rose-gold cordial held in a faceted crystal phial, soothing aches and banishing fatigue in seconds."
+    }
+   ],
+   "backstory": "Formerly the chief jester and illusionist to the slaughtered rightful king. When the Usurper unleashed his witch-hunts, this artist slipped into the shadows, retaining theatrical secrets and a keen eye for court intrigue."
+  },
+  {
+   "id": "hero_shadow_elf",
+   "classKey": "rogue",
+   "className": "Shadow Elf Infiltrator",
+   "name": "Shadow Elf Infiltrator",
+   "role": "Master of rooftops, locks, and ventilation shafts",
+   "avatarEmoji": "🗡️",
+   "color": "#6366f1",
+   "hp": 25,
+   "maxHp": 25,
+   "stats": {
+    "str": 1,
+    "agi": 4,
+    "int": 3,
+    "cha": 2
+   },
+   "equipped": {
+    "weapon": "Twin Daggers 'Fangs of Night' (+4 Agility)",
+    "armor": "Nightfox Supple Leather (+3 Agility)",
+    "accessory": "Feline Goggles (+2 Intelligence)"
+   },
+   "skills": [
+    {
+     "name": "Slick Shingle Stride",
+     "desc": "Permits silent movement across rain-slicked roofs, stable rafters, and the narrow exhaust shafts of the citadel kitchens."
+    },
+    {
+     "name": "Shrouding Smoke Screen",
+     "desc": "Envelops the party in thick gloom, enabling a clean escape right from under the noses of the Iron Guard."
+    }
+   ],
+   "inventory": [
+    {
+     "id": "elf_item_1",
+     "name": "Twin Daggers 'Fangs of Night'",
+     "rarityLabel": "Shadow Elf Blades • Equipped",
+     "category": "items",
+     "slot": "weapon",
+     "type": "weapon",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+4 to Agility",
+     "artKey": "px_twin_daggers",
+     "lore": "Slender elven stilettos forged from matte black steel, casting no glint even under the glare of torchlight."
+    },
+    {
+     "id": "elf_item_2",
+     "name": "Nightfox Supple Leather",
+     "rarityLabel": "Infiltrator's Armor • Equipped",
+     "category": "items",
+     "slot": "armor",
+     "type": "armor",
+     "qty": 1,
+     "starred": false,
+     "equipped": true,
+     "bonus": "+3 to Agility and silent footing",
+     "artKey": "px_shadow_armor",
+     "lore": "A dark, form-fitting jerkin tailored with hidden pockets and sound-dampening soles that glide silently across cold stone."
+    },
+    {
+     "id": "elf_item_3",
+     "name": "Feline Goggles",
+     "rarityLabel": "Scout's Relic • Equipped",
+     "category": "resources",
+     "slot": "accessory",
+     "type": "artifact",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+2 to Intelligence and night sight",
+     "artKey": "px_night_goggles",
+     "lore": "Faceted violet-quartz lenses granting perfect visual clarity through the pitch-black tunnels of sewers and soot-choked flues."
+    },
+    {
+     "id": "elf_item_4",
+     "name": "Grappling Hook on Spider-Silk Cord",
+     "rarityLabel": "Breaching Gear",
+     "category": "items",
+     "type": "consumable",
+     "qty": 1,
+     "starred": true,
+     "equipped": false,
+     "bonus": "+3 to rooftop climbing and flue rigging",
+     "artKey": "px_grappling_hook",
+     "lore": "A triple-pronged blackened steel hook tied to ultra-tensile silken line. Essential for scaling kitchen ceilings to access the grand flue."
+    },
+    {
+     "id": "elf_item_5",
+     "name": "'Twilight' Smoke Pellets",
+     "rarityLabel": "Tactical Escape Munition",
+     "category": "materials",
+     "type": "consumable",
+     "qty": 3,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Instant obscuring smoke in taverns or alleys",
+     "artKey": "px_smoke_bombs",
+     "lore": "Detonating on impact, these clay spheres release a thick indigo smog that leaves heavy-armored knights blind and coughing."
+    },
+    {
+     "id": "elf_item_6",
+     "name": "Shadow Guild Silver Lockpicks",
+     "rarityLabel": "Master Lockpicking Kit",
+     "category": "materials",
+     "type": "consumable",
+     "qty": 3,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Picks sewer grates and pantry locks",
+     "artKey": "px_lockpicks",
+     "lore": "Delicate picks of tempered moon-silver that make short work of royal tumblers and antimagic manacles without a click."
+    },
+    {
+     "id": "elf_item_7",
+     "name": "Shadowblood Draught",
+     "rarityLabel": "Elven Healing Salve",
+     "category": "items",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "heal": 12,
+     "bonus": "+12 HP",
+     "artKey": "px_shadow_vial",
+     "lore": "A deep indigo herbal extract brewed from subterranean roots that seals cuts and cools burns in moments."
+    }
+   ],
+   "backstory": "The last surviving scout of the woodland elves within the capital. Knows every roofline, gutter pipe, and secret subterranean flue beneath the royal fortress."
+  },
+  {
+   "id": "hero_forest_druid",
+   "classKey": "mystic",
+   "className": "Forest Spirit Conjurer",
+   "name": "Forest Spirit Conjurer",
+   "role": "Insect speech, vermin alliances, and beast mastery",
+   "avatarEmoji": "🌿",
+   "color": "#10b981",
+   "hp": 28,
+   "maxHp": 28,
+   "stats": {
+    "str": 1,
+    "agi": 2,
+    "int": 4,
+    "cha": 3
+   },
+   "equipped": {
+    "weapon": "Staff of Chitinous Whispers (+4 Intelligence)",
+    "armor": "Mantle of Ancient Moss (+3 Defense)",
+    "accessory": "Amber Heart of the Hive (+3 Charisma with beasts)"
+   },
+   "skills": [
+    {
+     "name": "Voice of the Subterranean Swarm",
+     "desc": "Enables fluid communion with the Giant Cockroach Sentinels and the Cockroach King within the city depths."
+    },
+    {
+     "name": "Beast Soothing Touch",
+     "desc": "Calms the spirited Black-Star White Steeds instantly, ensuring they heed only the party's lead."
+    }
+   ],
+   "inventory": [
+    {
+     "id": "drd_item_1",
+     "name": "Staff of Chitinous Whispers",
+     "rarityLabel": "Living Druidic Staff • Equipped",
+     "category": "items",
+     "slot": "weapon",
+     "type": "weapon",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+4 to Intelligence and beast speech",
+     "artKey": "px_insect_staff",
+     "lore": "Gnarled elder-oak root crowned with a dormant, glowing jewel-beetle. Translates the thoughts of crawling vermin and wild beasts."
+    },
+    {
+     "id": "drd_item_2",
+     "name": "Mantle of Ancient Moss",
+     "rarityLabel": "Primeval Living Raiment • Equipped",
+     "category": "items",
+     "slot": "armor",
+     "type": "armor",
+     "qty": 1,
+     "starred": false,
+     "equipped": true,
+     "bonus": "+3 to Resilience in dark places",
+     "artKey": "px_moss_robe",
+     "lore": "A living cloak woven from deep-forest moss and lichen that sheds the filth of sewers and repels noxious vapors."
+    },
+    {
+     "id": "drd_item_3",
+     "name": "Amber Heart of the Hive",
+     "rarityLabel": "Primeval Hive Charm • Equipped",
+     "category": "resources",
+     "slot": "accessory",
+     "type": "artifact",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+3 to Diplomacy with the Cockroach King",
+     "artKey": "px_amber_heart",
+     "lore": "A warm nugget of fossilized amber containing a drop of primordial nectar, inspiring reverence among cave-dwelling crawlers."
+    },
+    {
+     "id": "drd_item_4",
+     "name": "Treant Honey-Resin",
+     "rarityLabel": "Offering for Cockroach Sentinels",
+     "category": "materials",
+     "type": "consumable",
+     "qty": 3,
+     "starred": true,
+     "equipped": false,
+     "bonus": "Peaceful bypass past the 2 Sentinels (Act III)",
+     "artKey": "px_honey_resin",
+     "lore": "Sweet, aromatic cakes of wild forest sap and comb. Any giant roach in the tunnels will gladly yield passage for such a delicacy."
+    },
+    {
+     "id": "drd_item_5",
+     "name": "Pouch of Wild Briar Seeds",
+     "rarityLabel": "Natural Barricade",
+     "category": "materials",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Barricades doors or alleys with thorny thickets",
+     "artKey": "px_thorn_seeds",
+     "lore": "Cast upon bare stone, these seeds erupt within heartbeats into an impenetrable tangle of ironhard thorns."
+    },
+    {
+     "id": "drd_item_6",
+     "name": "Firefly Walnut Lantern",
+     "rarityLabel": "Gentle Light Source",
+     "category": "resources",
+     "type": "consumable",
+     "qty": 1,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Illuminates dark tunnels without provoking roaches",
+     "artKey": "px_firefly_lantern",
+     "lore": "Unlike harsh torch fire that enrages subterranean swarms, this soft greenish luminescence soothes the denizens of the deep."
+    },
+    {
+     "id": "drd_item_7",
+     "name": "Dew of the World Tree",
+     "rarityLabel": "Primeval Healing Draught",
+     "category": "items",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "heal": 14,
+     "bonus": "+14 HP",
+     "artKey": "px_dew_vial",
+     "lore": "Crystal-clear emerald dew sealed in a curled fern leaf, revitalizing shattered stamina and cleansing toxins."
+    }
+   ],
+   "backstory": "An ancient forest spirit manifested in mortal guise. When the tyrant's logging engines felled sacred groves to hunt down magical beings, the spirit marched into the city to bring down the iron throne."
+  },
+  {
+   "id": "hero_astral_warlock",
+   "classKey": "warlock",
+   "className": "Astral Ash Warlock",
+   "name": "Astral Ash Warlock",
+   "role": "Airflow manipulation in flues and ward runes",
+   "avatarEmoji": "🔮",
+   "color": "#06b6d4",
+   "hp": 25,
+   "maxHp": 25,
+   "stats": {
+    "str": 0,
+    "agi": 2,
+    "int": 5,
+    "cha": 2
+   },
+   "equipped": {
+    "weapon": "Cold Flame Sphere (+4 Intelligence)",
+    "armor": "Vestments of Starlight Ash (+2 Agility)",
+    "accessory": "Astral Wind Compass (+3 Intelligence)"
+   },
+   "skills": [
+    {
+     "name": "Ventilation Gale Surge",
+     "desc": "Directs drafts within the citadel kitchen flue so the Cockroach King's venom surges instantly into every royal quarter."
+    },
+    {
+     "name": "Shroud of Quietude",
+     "desc": "Muffles the clatter of boots and armor while the party escorts the white steeds through castle courtyards."
+    }
+   ],
+   "inventory": [
+    {
+     "id": "war_item_1",
+     "name": "Cold Flame Sphere",
+     "rarityLabel": "Warlock's Astral Focus • Equipped",
+     "category": "items",
+     "slot": "weapon",
+     "type": "weapon",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+4 to Intelligence and wind sorcery",
+     "artKey": "px_astral_orb",
+     "lore": "A glass orb churning with chilling blue astral vapors, granting telekinetic mastery over airflow and drafts."
+    },
+    {
+     "id": "war_item_2",
+     "name": "Vestments of Starlight Ash",
+     "rarityLabel": "Warlock's Protective Robe • Equipped",
+     "category": "items",
+     "slot": "armor",
+     "type": "armor",
+     "qty": 1,
+     "starred": false,
+     "equipped": true,
+     "bonus": "+2 to Agility and armor warding",
+     "artKey": "px_warlock_robe",
+     "lore": "A deep teal robe stitched with starlight runes, causing heavy iron bolts to deflect harmlessly off its folds."
+    },
+    {
+     "id": "war_item_3",
+     "name": "Astral Wind Compass",
+     "rarityLabel": "Navigational Relic • Equipped",
+     "category": "resources",
+     "slot": "accessory",
+     "type": "artifact",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+3 to locating ventilation shafts",
+     "artKey": "px_wind_compass",
+     "lore": "Its silver needle aligns unerringly with the strongest air drafts—from subterranean gratings to the citadel's grand chimney."
+    },
+    {
+     "id": "war_item_4",
+     "name": "Pouch of Astral Ash",
+     "rarityLabel": "Catalyst for Citadel Flue",
+     "category": "materials",
+     "type": "consumable",
+     "qty": 3,
+     "starred": true,
+     "equipped": false,
+     "bonus": "Instantly disperses 'Abyssal Breath' through the keep",
+     "artKey": "px_ash_pouch",
+     "lore": "Featherlight, sparkling ash that ignites an immense updraft when dropped into hearth ventilation, carrying gas into all upper chambers."
+    },
+    {
+     "id": "war_item_5",
+     "name": "'Muffled Deceit' Scroll",
+     "rarityLabel": "Sound Dampening Ward",
+     "category": "resources",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Total party silence for 1 full scene",
+     "artKey": "px_silence_scroll",
+     "lore": "Ancient parchment sealed with azure wax. When broken, even horse hooves and rattling harness make no sound."
+    },
+    {
+     "id": "war_item_6",
+     "name": "Storm Pulse Crystal",
+     "rarityLabel": "Shock Munition",
+     "category": "resources",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Stuns armored knights in close quarters",
+     "artKey": "px_storm_crystal",
+     "lore": "A charged sapphire containing trapped lightning. Devastating against the Iron Guard when triggered in wet, rain-soaked alleys."
+    },
+    {
+     "id": "war_item_7",
+     "name": "Astral Ether Elixir",
+     "rarityLabel": "Warlock's Restorative Draught",
+     "category": "items",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "heal": 12,
+     "bonus": "+12 HP",
+     "artKey": "px_ether_flask",
+     "lore": "A luminous cerulean brew in an angular flask that swiftly revitalizes the warlock's psychic focus and stamina."
+    }
+   ],
+   "backstory": "The surviving disciple of the Spire of Elements, torched by the new king's inquisitors. His control over ash and atmospheric drafts makes him the ideal saboteur for the citadel's grand flue."
+  },
+  {
+   "id": "hero_kharakternyk",
+   "classKey": "ranger",
+   "className": "Kharakternyk Pathfinder",
+   "name": "Kharakternyk Pathfinder",
+   "role": "Saber master, equestrian whisperer, and guard imposter",
+   "avatarEmoji": "⚔️",
+   "color": "#f59e0b",
+   "hp": 30,
+   "maxHp": 30,
+   "stats": {
+    "str": 3,
+    "agi": 3,
+    "int": 1,
+    "cha": 2
+   },
+   "equipped": {
+    "weapon": "Silver Saber 'Wolf Star' (+4 Strength)",
+    "armor": "Coat of the Grey Wolf (+3 Defense)",
+    "accessory": "Silver Horseshoe Charm (+3 Charisma with horses)"
+   },
+   "skills": [
+    {
+     "name": "Cossack Horse-Whisperer",
+     "desc": "The black-star white steeds obey the Kharakternyk flawlessly, winning instant admiration from the King's middle son."
+    },
+    {
+     "name": "Whirlwind of Silver Steel",
+     "desc": "A blinding saber flurry that disarms Iron Guard sentries cleanly without raising an alarm."
+    }
+   ],
+   "inventory": [
+    {
+     "id": "rng_item_1",
+     "name": "Silver Saber 'Wolf Star'",
+     "rarityLabel": "Pathfinder's Blade • Equipped",
+     "category": "items",
+     "slot": "weapon",
+     "type": "weapon",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+4 to Strength",
+     "artKey": "px_silver_saber",
+     "lore": "A curved cavalry saber etched with steppe runes and fine silver inlay. Cleaves cleanly through the ash shafts of halberds."
+    },
+    {
+     "id": "rng_item_2",
+     "name": "Coat of the Grey Wolf",
+     "rarityLabel": "Pathfinder's Trail Garb • Equipped",
+     "category": "items",
+     "slot": "armor",
+     "type": "armor",
+     "qty": 1,
+     "starred": false,
+     "equipped": true,
+     "bonus": "+3 to Resilience and protection",
+     "artKey": "px_wolf_coat",
+     "lore": "Rugged leather overcoat trimmed with thick wolf pelt, tailored to conceal purloined guard breastplates beneath."
+    },
+    {
+     "id": "rng_item_3",
+     "name": "Silver Horseshoe Charm",
+     "rarityLabel": "Equine Amulet • Equipped",
+     "category": "resources",
+     "slot": "accessory",
+     "type": "artifact",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+3 to checks with White Steeds",
+     "artKey": "px_silver_horseshoe",
+     "lore": "An heirloom silver shoe forged by ancient cossack sorcerers. Any mount immediately senses a master equestrian in its bearer."
+    },
+    {
+     "id": "rng_item_4",
+     "name": "Royal Mint Oats",
+     "rarityLabel": "Treat for the Black-Star Steeds",
+     "category": "materials",
+     "type": "consumable",
+     "qty": 3,
+     "starred": true,
+     "equipped": false,
+     "bonus": "Tames the White Steeds in stables and court",
+     "artKey": "px_royal_oats",
+     "lore": "A bag of prime grain infused with wild steppe mint. The black-star steeds will gladly follow anyone carrying this treat into the jaws of peril."
+    },
+    {
+     "id": "rng_item_5",
+     "name": "Royal Courier's Wax Seal",
+     "rarityLabel": "Forged Official Papers",
+     "category": "resources",
+     "type": "consumable",
+     "qty": 1,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Assists in passing outer gate inspections",
+     "artKey": "px_wax_seal",
+     "lore": "Parchment bearing the Usurper's black-star emblem, assuring portcullis guards that the horses are a personal delivery for the prince."
+    },
+    {
+     "id": "rng_item_6",
+     "name": "Wrist Arbalest with Sleep Darts",
+     "rarityLabel": "Silent Ranged Sidearm",
+     "category": "items",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Silently tranquilizes parapet guards",
+     "artKey": "px_mini_crossbow",
+     "lore": "A miniature wooden wrist-bow whose steel bolts are coated in paralyzing hemlock sap."
+    },
+    {
+     "id": "rng_item_7",
+     "name": "Cossack Balsam 'Ninefold Might'",
+     "rarityLabel": "Pathfinder's Herbal Flask",
+     "category": "items",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "heal": 14,
+     "bonus": "+14 HP",
+     "artKey": "px_herbal_balm",
+     "lore": "A clay flask of potent spirit steeped in nine wild steppe herbs, knitting flesh and steadying the heartbeat."
+    }
+   ],
+   "backstory": "Scion of an ancient lineage of warrior-sorcerers skilled in the art of misdirection, swordcraft, and beast mastery, renowned across the realm for unrivaled equestrian skill."
+  },
+  {
+   "id": "hero_runic_guardian",
+   "classKey": "guardian",
+   "className": "Runic Giant Shieldbearer",
+   "name": "Runic Giant Shieldbearer",
+   "role": "Living frontline wall, brute force, and gate blockade",
+   "avatarEmoji": "🛡️",
+   "color": "#3b82f6",
+   "hp": 34,
+   "maxHp": 34,
+   "stats": {
+    "str": 4,
+    "agi": 1,
+    "int": 1,
+    "cha": 2
+   },
+   "equipped": {
+    "weapon": "Warhammer 'Thunderbringer' (+4 Strength)",
+    "armor": "Tower Shield & Titan's Plate (+4 Defense)",
+    "accessory": "Mountain Giant's Girdle (+3 Strength)"
+   },
+   "skills": [
+    {
+     "name": "Unyielding Bastion",
+     "desc": "Braces the great tower shield in alleys or sewers, soaking incoming strikes meant for companions."
+    },
+    {
+     "name": "Portcullis Barricade",
+     "desc": "Anchors and wedges the citadel doors shut for 2 hours, trapping the Usurper's guard within the gas-filled keep."
+    }
+   ],
+   "inventory": [
+    {
+     "id": "grd_item_1",
+     "name": "Warhammer 'Thunderbringer'",
+     "rarityLabel": "Giant's Heavy Maul • Equipped",
+     "category": "items",
+     "slot": "weapon",
+     "type": "weapon",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+4 to Strength and armor crushing",
+     "artKey": "px_runic_hammer",
+     "lore": "A towering two-handed warhammer carved with glowing sky-blue titan runes. Splinters gate bars and crumbles heavy plate in a single swing."
+    },
+    {
+     "id": "grd_item_2",
+     "name": "Tower Shield & Titan's Plate",
+     "rarityLabel": "Bulwark Heavy Armor • Equipped",
+     "category": "items",
+     "slot": "armor",
+     "type": "armor",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+4 to Defense for the party",
+     "artKey": "px_tower_shield",
+     "lore": "A full-height pavilion shield of tempered steel, inscribed with golden ward-glyphs that withstand siege engines."
+    },
+    {
+     "id": "grd_item_3",
+     "name": "Mountain Giant's Girdle",
+     "rarityLabel": "Colossal Strength Relic • Equipped",
+     "category": "resources",
+     "slot": "accessory",
+     "type": "artifact",
+     "qty": 1,
+     "starred": true,
+     "equipped": true,
+     "bonus": "+3 to lifting manholes and bracing doors",
+     "artKey": "px_giant_belt",
+     "lore": "A broad oxhide belt cinched with bronze titan buckles, granting the raw strength needed to heave sewer grates and hold iron gates against a mob."
+    },
+    {
+     "id": "grd_item_4",
+     "name": "Forged Iron Wedges & Chain",
+     "rarityLabel": "Citadel Sealing Kit",
+     "category": "materials",
+     "type": "consumable",
+     "qty": 3,
+     "starred": true,
+     "equipped": false,
+     "bonus": "Bars the castle gates for 2 hours in Act VIII",
+     "artKey": "px_iron_wedges",
+     "lore": "Heavy iron wedges and thick steel links. Driven beneath the citadel doors from outside, no knight inside can breach them before the vapors take their toll."
+    },
+    {
+     "id": "grd_item_5",
+     "name": "Runic Echo Horn",
+     "rarityLabel": "Tactical Decoy Horn",
+     "category": "resources",
+     "type": "consumable",
+     "qty": 1,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Creates illusory alarms in distant wings",
+     "artKey": "px_runic_horn",
+     "lore": "When blown at a soft whisper, its blast echoes blocks away, pulling Iron Guard squads toward phantom threats."
+    },
+    {
+     "id": "grd_item_6",
+     "name": "Jar of Stonepitch Oil",
+     "rarityLabel": "Infantry Hazard Trap",
+     "category": "materials",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "bonus": "Turns stones and stairs into a slick hazard",
+     "artKey": "px_oil_jug",
+     "lore": "Viscous mountain pitch that coats cobblestones or tavern stairwells, sending ironclad pursuers crashing to the floor."
+    },
+    {
+     "id": "grd_item_7",
+     "name": "Tankard of Mountain Giant Ale",
+     "rarityLabel": "Hearty Giant Brew",
+     "category": "items",
+     "type": "consumable",
+     "qty": 2,
+     "starred": false,
+     "equipped": false,
+     "heal": 16,
+     "bonus": "+16 HP",
+     "artKey": "px_giant_ale",
+     "lore": "Foaming, honey-laced mountain brew held in a stout oak tankard, restoring a massive +16 HP in a single gulp."
+    }
+   ],
+   "backstory": "Offspring of primeval mountain giants, marked by ancient glyphs etched into his flesh. Outlawed by the Usurper's edicts, yet when donned in purloined royal plate, he commands the sheer, terrifying presence of an elite guard captain."
+  }
+ ]
+}
