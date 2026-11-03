@@ -14,7 +14,112 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      room_messages: {
+        Row: {
+          author: string
+          created_at: string
+          id: number
+          kind: string
+          room_code: string
+          text: string
+          to_master: boolean
+        }
+        Insert: {
+          author: string
+          created_at?: string
+          id?: number
+          kind?: string
+          room_code: string
+          text: string
+          to_master?: boolean
+        }
+        Update: {
+          author?: string
+          created_at?: string
+          id?: number
+          kind?: string
+          room_code?: string
+          text?: string
+          to_master?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_messages_room_code_fkey"
+            columns: ["room_code"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      room_secrets: {
+        Row: {
+          created_at: string
+          player_id: string
+          room_code: string
+          token_hash: string
+        }
+        Insert: {
+          created_at?: string
+          player_id: string
+          room_code: string
+          token_hash: string
+        }
+        Update: {
+          created_at?: string
+          player_id?: string
+          room_code?: string
+          token_hash?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "room_secrets_room_code_fkey"
+            columns: ["room_code"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          busy_until: string | null
+          code: string
+          created_at: string
+          host_id: string
+          lang: string
+          phase: string
+          players: Json
+          state: Json | null
+          updated_at: string
+          version: number
+        }
+        Insert: {
+          busy_until?: string | null
+          code: string
+          created_at?: string
+          host_id: string
+          lang?: string
+          phase?: string
+          players?: Json
+          state?: Json | null
+          updated_at?: string
+          version?: number
+        }
+        Update: {
+          busy_until?: string | null
+          code?: string
+          created_at?: string
+          host_id?: string
+          lang?: string
+          phase?: string
+          players?: Json
+          state?: Json | null
+          updated_at?: string
+          version?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
