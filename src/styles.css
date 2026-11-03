@@ -280,19 +280,21 @@
 @utility animate-pan { animation: pan 30s ease-in-out infinite alternate; }
 
 .story-copy { font-family: "Ubuntu", sans-serif; }
-.game-scene { height: 460px; }
-.scene-sprite { height: 195px; width: 100%; max-width: 185px; }
-.scene-name { background: color-mix(in oklab, var(--ink) 85%, transparent); padding: 4px 8px; }
+.game-scene { height: 480px; }
+.scene-unit { margin: 0 -14px; }
+.scene-hero { height: 270px; width: auto; max-width: none; }
+.scene-enemy { height: 250px; width: auto; max-width: none; }
+.scene-name { background: color-mix(in oklab, var(--ink) 85%, transparent); padding: 3px 6px; }
 .game-hp { appearance: none; height: 6px; border: 0; background: var(--ink); }
 .game-hp::-webkit-progress-bar { background: var(--ink); }
 .game-hp::-webkit-progress-value { background: var(--hp); }
 .game-hp::-moz-progress-bar { background: var(--hp); }
 .dice-face { background: var(--secondary); clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%); }
-@media (max-width: 640px) {
-  .game-scene { height: 440px; }
-  .scene-sprite { height: 140px; }
-  .scene-party, .game-scene > div:nth-last-child(2) { bottom: 130px; }
-  .game-scene > div:last-child { font-size: 12px; line-height: 1.4; min-height: 110px; }
+@media (max-width: 767px) {
+  .game-scene { height: 330px; }
+  .scene-unit { margin: 0 -18px; }
+  .scene-hero { height: 165px; }
+  .scene-enemy { height: 150px; }
   .pixel-btn, .pixel-btn-ghost { font-size: 0.65rem; padding: 0.8rem 1rem; }
 }
 @media (prefers-reduced-motion: reduce) {
