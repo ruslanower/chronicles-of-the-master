@@ -2,8 +2,8 @@ import { advance, appendLog, appendMaster, applyMasterHp, checkOutcome, clamp, c
 import type { NarrateRequest } from "./prompt";
 
 export type HeroAction =
-  | { type: "ability"; abilityId: string; targetId?: string }
-  | { type: "item"; itemId: string; targetId?: string }
+  | { type: "ability"; abilityId: string; targetId?: string | undefined }
+  | { type: "item"; itemId: string; targetId?: string | undefined }
   | { type: "free"; text: string }
   | { type: "skip" };
 
