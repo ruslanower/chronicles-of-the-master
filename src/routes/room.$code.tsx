@@ -1,4 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { OnlineRoom } from "@/game/components/OnlineRoom";
 
 export const Route = createFileRoute("/room/$code")({
   head: () => ({
@@ -16,12 +17,5 @@ export const Route = createFileRoute("/room/$code")({
 
 function Room() {
   const { code } = Route.useParams();
-  return (
-    <main className="flex min-h-dvh flex-col items-center justify-center gap-4 bg-night p-6 text-center">
-      <p className="font-display text-xs text-gold">{code}</p>
-      <h1 className="title-glow text-lg">Онлайн-кімнати ще в роботі</h1>
-      <p className="max-w-md text-parchment">Кімнату створено, але екран лобі та спільної гри ще не готовий.</p>
-      <Link to="/" className="text-gold underline">← На головну</Link>
-    </main>
-  );
+  return <OnlineRoom code={code.toUpperCase()} />;
 }
