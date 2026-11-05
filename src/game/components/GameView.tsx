@@ -53,6 +53,7 @@ export function GameView(p: Props) {
       const id = setTimeout(onTimeout, 2500);
       return () => clearTimeout(id);
     }
+    return undefined;
   }, [p.timed, playing, heroTurn, left, onTimeout]);
   if (!act) return null;
   const latest = state.log.filter((e) => e.kind === "master").at(-1);

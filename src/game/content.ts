@@ -5,7 +5,7 @@ export type AbilityKind = "attack" | "aoe" | "stun" | "heal" | "hide" | "shield"
 export type Ability = {
   id: string;
   kind: AbilityKind;
-  dice?: string; // e.g. "1d8"
+  dice?: string | undefined; // e.g. "1d8"
   stat: keyof Stats;
   cooldown: number; // rounds before reuse (0 = always)
   name: Record<Lang, string>;

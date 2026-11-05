@@ -37,7 +37,8 @@ export function SoloGame({ state, chat, onUpdate, onChat, onExit }: { state: Gam
     setChatBusy(true);
     try {
       const out = await masterChat(state, mine.author, text, narrate);
-      onChat([...list, { id: `m${Date.now()}`, author: lang === "en" ? "Master" : "Майстер", kind: "master", text: out.reply }].slice(-80));
+      const reply: ChatMsg = { id: `m${Date.now()}`, author: lang === "en" ? "Master" : "Майстер", kind: "master", text: out.reply };
+      onChat([...list, reply].slice(-80));
       onUpdate(out.state);
     } catch { setError(t("masterError", lang)); }
     finally { setChatBusy(false); }
