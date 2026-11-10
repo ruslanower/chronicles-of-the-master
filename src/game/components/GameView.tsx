@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, BookOpen, Crown, LoaderCircle, RotateCcw, Target, Timer, MessageCircle, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, BookOpen, Crown, LoaderCircle, RotateCcw, Sparkles, Target, Timer, MessageCircle, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { campaignFor, ROMAN, t, type Lang } from "../i18n";
 import { heroSprite } from "../data";
 import { ACT_PROGRESS_GOAL, currentActor, TURN_SECONDS, type GameState } from "../engine";
+import { getStoredAiKey, setStoredAiKey } from "../clientAi";
 import { isSoundMuted, playClickSound, playCritSound, playDefeatSound, playVictorySound, setSoundMuted } from "../sound";
 import type { HeroAction } from "../turn";
 import { Scene } from "./Scene";
@@ -42,6 +44,8 @@ function useCountdown(startedAt: number, active: boolean) {
 export function GameView(p: Props) {
   const { state, lang } = p;
   const [journal, setJournal] = useState(false);
+  const [aiModal, setAiModal] = useState(false);
+  const [aiKeyInput, setAiKeyInput] = useState(() => getStoredAiKey());
   const [muted, setMuted] = useState(() => isSoundMuted());
   const act = campaignFor(lang).acts[state.actIndex];
   const actor = currentActor(state);
@@ -85,6 +89,18 @@ export function GameView(p: Props) {
           <div><p className="font-display text-[0.55rem] text-gold">{t("gameTitle", lang).toUpperCase()}</p><p className="mt-0.5 text-xs text-muted-foreground">{t("gameSubtitle", lang)}</p></div>
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            aria-label={lang === "en" ? "AI Master Settings" : "Налаштування ШІ-Майстра"}
+            title={lang === "en" ? "AI Master Settings" : "Налаштування ШІ-Майстра"}
+            onClick={() => {
+              setAiKeyInput(getStoredAiKey());
+              setAiModal(true);
+            }}
+          >
+            <Sparkles className={`h-4 w-4 ${getStoredAiKey() ? "text-gold" : "text-astral"}`} />
+          </Button>
           <Button variant="outline" size="icon" aria-label={t("sound", lang)} aria-pressed={!muted} onClick={toggleMute}>
             {muted ? <VolumeX className="h-4 w-4 text-muted-foreground" /> : <Volume2 className="h-4 w-4 text-gold" />}
           </Button>
@@ -192,6 +208,62 @@ export function GameView(p: Props) {
           <section role="dialog" aria-modal="true" aria-label={t("journal", lang)} className="pixel-frame max-h-[85dvh] w-full max-w-3xl overflow-y-auto p-5 md:p-8" onClick={(e) => e.stopPropagation()}>
             <div className="mb-6 flex items-center justify-between"><h2 className="font-display text-xs text-gold">{t("journal", lang).toUpperCase()}</h2><Button variant="ghost" onClick={() => setJournal(false)}>{t("close", lang)}</Button></div>
             <div className="space-y-4">{state.log.map((e) => <div key={e.id} className="border-l-2 border-border pl-4"><p className={`mb-1 text-xs ${e.kind === "master" ? "text-gold" : e.kind === "enemy" ? "text-hp" : "text-muted-foreground"}`}>{e.who}</p><p className="story-copy leading-relaxed text-parchment">{e.text}</p></div>)}</div>
+          </section>
+        </div>
+      )}
+
+      {aiModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-ink/90 p-4" onClick={() => setAiModal(false)}>
+          <section role="dialog" aria-modal="true" aria-label={lang === "en" ? "AI Master Settings" : "Налаштування ШІ-Майстра"} className="pixel-frame w-full max-w-lg space-y-4 p-5 md:p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between">
+              <h2 className="font-display text-xs text-gold">{lang === "en" ? "AI MASTER ENGINE" : "РУШІЙ ШІ-МАЙСТРА"}</h2>
+              <Button variant="ghost" size="sm" onClick={() => setAiModal(false)}>{t("close", lang)}</Button>
+            </div>
+            <p className="text-sm leading-relaxed text-parchment">
+              {lang === "en"
+                ? "By default, the game uses the free browser AI (Pollinations) + instant contextual Dungeon Master. For ultra-fast (<0.5s) and deep LLM roleplay, paste a free Google Gemini (AIza...) or Groq (gsk_...) API key below:"
+                : "За замовчуванням гра використовує безкоштовний браузерний ШІ (Pollinations) + миттєвий контекстний рушій Майстра. Якщо хочете надшвидку (<0.5 с) генерацію від великої моделі — вставте безкоштовний ключ Google Gemini (AIza...) або Groq (gsk_...):"}
+            </p>
+            <Input
+              type="password"
+              value={aiKeyInput}
+              onChange={(e) => setAiKeyInput(e.target.value)}
+              placeholder={lang === "en" ? "AIza... (Gemini) or gsk_... (Groq)" : "AIza... (Gemini) або gsk_... (Groq)"}
+            />
+            <div className="flex flex-wrap items-center justify-between gap-2 pt-2">
+              <a
+                href="https://aistudio.google.com/apikey"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-gold underline"
+              >
+                {lang === "en" ? "Get free Gemini API key →" : "Отримати безкоштовний ключ Gemini →"}
+              </a>
+              <div className="flex gap-2">
+                {aiKeyInput && (
+                  <Button
+                    variant="pixelGhost"
+                    size="sm"
+                    onClick={() => {
+                      setAiKeyInput("");
+                      setStoredAiKey("");
+                    }}
+                  >
+                    {lang === "en" ? "Clear" : "Очистити"}
+                  </Button>
+                )}
+                <Button
+                  variant="pixel"
+                  size="sm"
+                  onClick={() => {
+                    setStoredAiKey(aiKeyInput);
+                    setAiModal(false);
+                  }}
+                >
+                  {lang === "en" ? "Save" : "Зберегти"}
+                </Button>
+              </div>
+            </div>
           </section>
         </div>
       )}

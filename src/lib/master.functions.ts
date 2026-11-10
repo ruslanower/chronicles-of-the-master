@@ -18,9 +18,10 @@ export const masterNarrate = createServerFn({ method: "POST" })
     return parsed as unknown as { state: GameState; req: NarrateRequest };
   })
   .handler(async ({ data }) => {
-    const { narrateServer, masterErrorMessage } = await import("./master.server");
+    const { narrateServerWithMeta, masterErrorMessage } = await import("./master.server");
     try {
-      return { ok: true as const, reply: await narrateServer(data.state, data.req) };
+      const { reply, fromAi } = await narrateServerWithMeta(data.state, data.req);
+      return { ok: true as const, reply, fromAi };
     } catch (e) {
       console.error(e);
       return { ok: false as const, error: masterErrorMessage(e, data.state.lang === "en" ? "en" : "uk") };

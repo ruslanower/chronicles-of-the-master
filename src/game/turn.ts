@@ -25,7 +25,15 @@ function applyReply(state: GameState, reply: MasterReply, kind: NarrateRequest["
  * Full hero turn: resolve the action, run any enemy counter-turns, and let the Master narrate
  * in a single combined roundtrip for fast pacing.
  */
-export async function playHeroTurn(state: GameState, heroId: string, action: HeroAction, narrate: Narrator, rng: Rng = Math.random, now = Date.now()): Promise<GameState> {
+export async function playHeroTurn(
+  state: GameState,
+  heroId: string,
+  action: HeroAction,
+  narrate: Narrator,
+  rng: Rng = Math.random,
+  now = Date.now(),
+  onProgress?: (intermediate: GameState) => void,
+): Promise<GameState> {
   const actor = currentActor(state);
   if (state.status !== "playing" || state.actReady) throw new Error("not playing");
   if (!actor || actor.type !== "hero" || actor.hero.id !== heroId) throw new Error("not your turn");
@@ -37,6 +45,8 @@ export async function playHeroTurn(state: GameState, heroId: string, action: Her
     s = advance(o.state, now);
     const enemies = runEnemies(s, rng, now);
     s = enemies.state;
+    // Immediately emit the mechanical result so HP bars, floating damage, and D20 rolls appear with 0ms delay!
+    onProgress?.(s);
     const combinedSummary = enemies.summaries.length ? `${o.summary}\n---\n${enemies.summaries.join("\n")}` : o.summary;
     let reply: MasterReply;
     try {
@@ -52,6 +62,7 @@ export async function playHeroTurn(state: GameState, heroId: string, action: Her
     if (!text) throw new Error("empty");
     const roll = d20(rng);
     s = appendLog({ ...s, lastEvents: [], lastRoll: null }, hero.name, "action", text);
+    onProgress?.(s);
     let reply: MasterReply;
     try {
       reply = await narrate(s, { kind: "free", text, d20: roll });
@@ -86,6 +97,7 @@ export async function playHeroTurn(state: GameState, heroId: string, action: Her
   const enemies = runEnemies(s, rng, now);
   s = enemies.state;
   if (enemies.summaries.length && s.status !== "victory") {
+    onProgress?.(s);
     try {
       s = applyReply(s, await narrate(s, { kind: "enemies", summary: enemies.summaries }), "enemies");
     } catch {

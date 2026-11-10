@@ -1,9 +1,10 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { masterNarrate } from "@/lib/master.functions";
 import { advanceAct, retryAct, type GameState, type MasterReply } from "../engine";
 import { masterChat, playHeroTurn, playOpeningEnemies, type HeroAction, type Narrator } from "../turn";
 import { generateFallbackMasterReply } from "../fallbackNarrator";
+import { getStoredAiKey, narrateClientAi } from "../clientAi";
 import type { NarrateRequest } from "../prompt";
 import { t } from "../i18n";
 import { GameView } from "./GameView";
@@ -14,15 +15,46 @@ export function SoloGame({ state, chat, onUpdate, onChat, onExit }: { state: Gam
   const [busy, setBusy] = useState(false);
   const [chatBusy, setChatBusy] = useState(false);
   const [error, setError] = useState("");
+  const serverHasAiRef = useRef<boolean | null>(null);
   const lang = state.lang;
 
   const narrate: Narrator = useCallback(async (s: GameState, req: NarrateRequest): Promise<MasterReply> => {
-    try {
-      const r = await ask({ data: { state: s, req } });
-      if (r.ok && r.reply) return r.reply as MasterReply;
-    } catch (e) {
-      console.warn("SoloGame masterNarrate call error, using local fallback:", e);
+    // 1. If the user configured a personal Gemini/Groq/OpenAI key in the browser, use it directly (<0.8s)
+    if (getStoredAiKey()) {
+      const direct = await narrateClientAi(s, req);
+      if (direct) return direct;
     }
+
+    // 2. Check server AI if we haven't learned that the server has no AI key / is offline
+    if (serverHasAiRef.current !== false) {
+      try {
+        const r = await ask({ data: { state: s, req } });
+        if (r.ok && r.fromAi && r.reply) {
+          serverHasAiRef.current = true;
+          return r.reply as MasterReply;
+        }
+        if (r.ok && !r.fromAi) {
+          serverHasAiRef.current = false;
+        }
+      } catch {
+        serverHasAiRef.current = false;
+      }
+    }
+
+    // 3. For free-form actions and chat (or when browser free AI is responsive), query live browser AI
+    if (req.kind === "free" || req.kind === "chat") {
+      const clientReply = await narrateClientAi(s, req);
+      if (clientReply) return clientReply;
+    } else {
+      // For standard combat mechanics, race browser AI with a short 1.4s window so combat stays lightning-fast
+      const fastClientReply = await Promise.race([
+        narrateClientAi(s, req),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 1400)),
+      ]);
+      if (fastClientReply) return fastClientReply;
+    }
+
+    // 4. Instant, context-aware procedural Master with hero names, ability names, damage & 15+ distinct lines
     return generateFallbackMasterReply(s, req);
   }, [ask]);
 
@@ -52,7 +84,7 @@ export function SoloGame({ state, chat, onUpdate, onChat, onExit }: { state: Gam
   return (
     <GameView
       state={state} lang={lang} mine="all" busy={busy} error={error} chat={chat} chatBusy={chatBusy}
-      onAction={(heroId, a: HeroAction) => run(() => playHeroTurn(state, heroId, a, narrate))}
+      onAction={(heroId, a: HeroAction) => run(() => playHeroTurn(state, heroId, a, narrate, Math.random, Date.now(), onUpdate))}
       onChat={sendChat}
       onNextAct={() => run(() => playOpeningEnemies(advanceAct(state), narrate))}
       onRetry={() => run(() => playOpeningEnemies(retryAct(state), narrate))}

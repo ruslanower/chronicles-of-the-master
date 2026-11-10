@@ -90,4 +90,33 @@ describe("Game engine & fallback narrator", () => {
       expect(out.state.lastEvents?.[0]?.kind).toBe("heal");
     }
   });
+
+  it("emits immediate mechanical progress before narrator finishes and varies narration with hero/ability details", async () => {
+    const state = newGame(["hero_kharakternyk"], "uk", {}, () => 0.9);
+    const enemy = state.enemies[0]!;
+    const progressStates: number[] = [];
+    const narrate = vi.fn(async (s, req) => {
+      // Progress callback must have already fired before narrate is awaited
+      expect(progressStates.length).toBeGreaterThan(0);
+      return generateFallbackMasterReply(s, req);
+    });
+
+    const next = await playHeroTurn(
+      state,
+      "hero_kharakternyk",
+      { type: "ability", abilityId: "saber", targetId: enemy.id },
+      narrate,
+      () => 0.75,
+      Date.now(),
+      (intermediate) => progressStates.push(intermediate.log.length),
+    );
+
+    const masterEntry = next.log.filter((e) => e.kind === "master").at(-1)?.text ?? "";
+    expect(masterEntry).toContain(state.party[0]!.name);
+    expect(masterEntry).toContain(enemy.name);
+
+    // Chat responses adapt to player questions
+    const enemyInfoChat = generateFallbackMasterReply(next, { kind: "chat", from: "Гравець", text: "Хто наші вороги і скільки в них ХП?" });
+    expect(enemyInfoChat.narration).toContain(enemy.name);
+  });
 });
