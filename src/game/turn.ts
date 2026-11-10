@@ -1,5 +1,6 @@
 import { advance, appendLog, appendMaster, applyMasterHp, checkOutcome, clamp, currentActor, d20, runEnemies, useAbility, useItem, type GameState, type MasterReply, type Rng } from "./engine";
 import type { NarrateRequest } from "./prompt";
+import { generateFallbackMasterReply } from "./fallbackNarrator";
 
 export type HeroAction =
   | { type: "ability"; abilityId: string; targetId?: string | undefined }
@@ -34,13 +35,24 @@ export async function playHeroTurn(state: GameState, heroId: string, action: Her
   if (action.type === "ability" || action.type === "item") {
     const o = action.type === "ability" ? useAbility(s, heroId, action.abilityId, action.targetId, rng) : useItem(s, heroId, action.itemId, action.targetId);
     s = o.state;
-    s = applyReply(s, await narrate(s, { kind: "mechanic", summary: o.summary }), "mechanic");
+    let reply: MasterReply;
+    try {
+      reply = await narrate(s, { kind: "mechanic", summary: o.summary });
+    } catch {
+      reply = generateFallbackMasterReply(s, { kind: "mechanic", summary: o.summary });
+    }
+    s = applyReply(s, reply, "mechanic");
   } else if (action.type === "free") {
     const text = action.text.trim().slice(0, 600);
     if (!text) throw new Error("empty");
     const roll = d20(rng);
     s = appendLog(s, hero.name, "action", text);
-    const reply = await narrate(s, { kind: "free", text, d20: roll });
+    let reply: MasterReply;
+    try {
+      reply = await narrate(s, { kind: "free", text, d20: roll });
+    } catch {
+      reply = generateFallbackMasterReply(s, { kind: "free", text, d20: roll });
+    }
     if (reply.check) {
       const bonus = hero.stats[reply.check.stat] ?? 0;
       const dc = clamp(reply.check.dc, 5, 20);
@@ -62,7 +74,7 @@ export async function playHeroTurn(state: GameState, heroId: string, action: Her
     try {
       s = applyReply(s, await narrate(s, { kind: "enemies", summary: enemies.summaries }), "enemies");
     } catch {
-      /* enemy narration is optional: dice results are already in the log */
+      s = applyReply(s, generateFallbackMasterReply(s, { kind: "enemies", summary: enemies.summaries }), "enemies");
     }
   }
   return s;
@@ -78,14 +90,19 @@ export async function playOpeningEnemies(state: GameState, narrate: Narrator, rn
     try {
       s = applyReply(s, await narrate(s, { kind: "enemies", summary: r.summaries }), "enemies");
     } catch {
-      /* optional */
+      s = applyReply(s, generateFallbackMasterReply(s, { kind: "enemies", summary: r.summaries }), "enemies");
     }
   }
   return s;
 }
 
 export async function masterChat(state: GameState, from: string, text: string, narrate: Narrator): Promise<{ state: GameState; reply: string }> {
-  const reply = await narrate(state, { kind: "chat", from, text: text.slice(0, 400) });
+  let reply: MasterReply;
+  try {
+    reply = await narrate(state, { kind: "chat", from, text: text.slice(0, 400) });
+  } catch {
+    reply = generateFallbackMasterReply(state, { kind: "chat", from, text: text.slice(0, 400) });
+  }
   const s = applyMasterHp(state, reply.hpChanges, { heroMin: -3, heroMax: 3, enemyMin: -3 });
   return { state: checkOutcome(s), reply: reply.narration };
 }

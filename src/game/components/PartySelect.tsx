@@ -21,7 +21,7 @@ export function HeroPicker({ lang, picked, taken = {}, onToggle }: { lang: Lang;
               className={`pixel-frame group relative flex h-auto flex-col items-center whitespace-normal p-3 pt-6 text-left transition-transform hover:-translate-y-1 hover:bg-transparent focus-visible:bg-transparent disabled:opacity-50 ${on ? "pixel-frame-gold" : ""}`}>
               {on && <span className="absolute right-2 top-2 bg-gold px-2 py-1 font-display text-[0.55rem] text-primary-foreground">P{order}</span>}
               {takenBy && <span className="absolute left-2 top-2 bg-secondary px-2 py-1 text-[0.65rem] text-parchment">{t("taken", lang)}: {takenBy}</span>}
-              <img src={heroSprite(h.classKey, on ? "action" : "idle")} alt={h.name} width={240} height={280} className={`pixel relative h-32 w-auto object-contain md:h-40 ${on ? "animate-bob" : "grayscale-[40%] group-hover:grayscale-0"}`} />
+              <img src={heroSprite(h.classKey, on ? "action" : "idle")} alt={h.name} width={240} height={280} className={`pixel relative h-24 sm:h-32 md:h-40 w-auto object-contain ${on ? "animate-bob" : "grayscale-[40%] group-hover:grayscale-0"}`} />
               <p className="relative mt-3 text-center text-sm leading-tight text-parchment md:text-base">{h.name}</p>
             </Button>
           );

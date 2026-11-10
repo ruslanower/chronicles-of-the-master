@@ -42,17 +42,17 @@ export function TitleScreen({ lang, onLang, onStart, onContinue }: { lang: Lang;
         {(["uk", "en"] as const).map((l) => <Button key={l} variant="pixelGhost" data-active={lang === l} aria-pressed={lang === l} onClick={() => onLang(l)}>{l === "uk" ? "UA" : "EN"}</Button>)}
       </div>
 
-      <div className="relative z-10 flex min-h-dvh flex-col items-center justify-end px-6 pb-12 text-center md:justify-center md:pb-0">
-        <p className="mb-6 font-display text-[0.55rem] text-parchment/80 md:text-xs">{t("chapter", lang)}</p>
-        <h1 className="title-glow text-2xl leading-relaxed md:text-5xl md:leading-[1.4]">{t("gameTitle", lang)}</h1>
-        <h2 className="mt-3 font-display text-xs text-astral md:text-base" style={{ textShadow: "2px 2px 0 var(--ink)" }}>{t("gameSubtitle", lang)}</h2>
-        <p className="mt-6 max-w-xl text-lg leading-snug text-parchment/90 md:text-xl">{campaignFor(lang).subtitle.split(".")[0]}.</p>
+      <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-4 py-10 text-center">
+        <p className="mb-3 md:mb-6 font-display text-[0.55rem] text-parchment/80 md:text-xs">{t("chapter", lang)}</p>
+        <h1 className="title-glow text-2xl sm:text-3xl md:text-5xl leading-tight md:leading-[1.4]">{t("gameTitle", lang)}</h1>
+        <h2 className="mt-2 md:mt-3 font-display text-xs text-astral md:text-base" style={{ textShadow: "2px 2px 0 var(--ink)" }}>{t("gameSubtitle", lang)}</h2>
+        <p className="mt-3 md:mt-6 max-w-xl text-sm sm:text-base md:text-xl leading-snug text-parchment/90">{campaignFor(lang).subtitle.split(".")[0]}.</p>
 
         {!online ? (
-          <div className="mt-8 flex w-full max-w-sm flex-col gap-4">
-            <Button variant="pixel" onClick={onStart}>{t("newAdventure", lang)}</Button>
-            <Button variant="pixelGhost" onClick={() => { setOnline(true); setName(localStorage.getItem("chronicles-name") ?? ""); }}><Users className="h-4 w-4" />{t("online", lang)}</Button>
-            {onContinue && <Button variant="pixelGhost" onClick={onContinue}>{t("continue", lang)}</Button>}
+          <div className="mt-6 md:mt-8 flex w-full max-w-sm flex-col gap-3 md:gap-4">
+            <Button variant="pixel" className="py-3 text-xs md:text-sm" onClick={onStart}>{t("newAdventure", lang)}</Button>
+            <Button variant="pixelGhost" className="py-2.5 text-xs md:text-sm" onClick={() => { setOnline(true); setName(localStorage.getItem("chronicles-name") ?? ""); }}><Users className="h-4 w-4 mr-1.5" />{t("online", lang)}</Button>
+            {onContinue && <Button variant="pixelGhost" className="py-2.5 text-xs md:text-sm" onClick={onContinue}>{t("continue", lang)}</Button>}
           </div>
         ) : (
           <div className="pixel-frame mt-8 w-full max-w-sm p-5 text-left">

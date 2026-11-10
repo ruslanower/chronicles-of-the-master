@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { masterNarrate } from "@/lib/master.functions";
 import { advanceAct, retryAct, type GameState, type MasterReply } from "../engine";
 import { masterChat, playHeroTurn, playOpeningEnemies, type HeroAction, type Narrator } from "../turn";
+import { generateFallbackMasterReply } from "../fallbackNarrator";
 import type { NarrateRequest } from "../prompt";
 import { t } from "../i18n";
 import { GameView } from "./GameView";
@@ -16,9 +17,13 @@ export function SoloGame({ state, chat, onUpdate, onChat, onExit }: { state: Gam
   const lang = state.lang;
 
   const narrate: Narrator = useCallback(async (s: GameState, req: NarrateRequest): Promise<MasterReply> => {
-    const r = await ask({ data: { state: s, req } });
-    if (!r.ok) throw new Error(r.error);
-    return r.reply as MasterReply;
+    try {
+      const r = await ask({ data: { state: s, req } });
+      if (r.ok && r.reply) return r.reply as MasterReply;
+    } catch (e) {
+      console.warn("SoloGame masterNarrate call error, using local fallback:", e);
+    }
+    return generateFallbackMasterReply(s, req);
   }, [ask]);
 
   async function run(f: () => Promise<GameState>) {

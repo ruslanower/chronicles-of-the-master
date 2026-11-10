@@ -290,12 +290,21 @@
 .game-hp::-webkit-progress-value { background: var(--hp); }
 .game-hp::-moz-progress-bar { background: var(--hp); }
 .dice-face { background: var(--secondary); clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%); }
+
 @media (max-width: 767px) {
-  .game-scene { height: 330px; }
-  .scene-unit { margin: 0 -18px; }
-  .scene-hero { height: 165px; }
-  .scene-enemy { height: 150px; }
-  .pixel-btn, .pixel-btn-ghost { font-size: 0.65rem; padding: 0.8rem 1rem; }
+  .game-scene { height: 260px; min-height: 240px; }
+  .scene-unit { margin: 0 -3px; }
+  .scene-hero { height: 115px; width: auto; max-width: 75px; }
+  .scene-enemy { height: 110px; width: auto; max-width: 75px; }
+  .hp-bar { height: 5px; }
+  .scene-name { font-size: 0.45rem !important; padding: 1px 3px !important; }
+  .pixel-btn, .pixel-btn-ghost { font-size: 0.65rem; padding: 0.65rem 0.9rem; }
+}
+@media (min-width: 768px) and (max-width: 1024px) {
+  .game-scene { height: 380px; }
+  .scene-unit { margin: 0 -10px; }
+  .scene-hero { height: 200px; }
+  .scene-enemy { height: 190px; }
 }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }

@@ -58,30 +58,70 @@ export function TurnPanel({ state, hero, lang, busy, onAction }: { state: GameSt
         <p className="font-display text-[0.6rem] text-gold">{t("yourTurn", lang).toUpperCase()} — {hero.name}</p>
         {busy && <span className="flex items-center gap-2 text-xs text-astral"><LoaderCircle className="h-4 w-4 animate-spin" />{t("masterThinking", lang)}</span>}
       </div>
-      <div className="mt-4 grid grid-cols-3 gap-2" role="tablist">
-        {tabs.map((x) => <Button key={x.id} role="tab" aria-selected={tab === x.id} variant="pixelGhost" data-active={tab === x.id} className="px-2" onClick={() => { setTab(x.id); setPending(null); }}><x.icon className="h-4 w-4" />{x.label}</Button>)}
+      <div className="mt-3 md:mt-4 grid grid-cols-3 gap-1.5 md:gap-2" role="tablist">
+        {tabs.map((x) => (
+          <Button
+            key={x.id}
+            role="tab"
+            aria-selected={tab === x.id}
+            variant="pixelGhost"
+            data-active={tab === x.id}
+            className="px-1.5 sm:px-3 text-[0.6rem] sm:text-xs h-9 sm:h-10"
+            onClick={() => {
+              setTab(x.id);
+              setPending(null);
+            }}
+          >
+            <x.icon className="h-3.5 w-3.5 mr-1 shrink-0" />
+            <span className="truncate">{x.label}</span>
+          </Button>
+        ))}
       </div>
 
       {pending ? (
-        <div className="mt-4">
-          <p className="mb-3 text-sm text-gold">{t("chooseTarget", lang)}</p>
+        <div className="mt-3 md:mt-4">
+          <p className="mb-2 text-xs md:text-sm text-gold font-display">{t("chooseTarget", lang)}</p>
           <div className="flex flex-wrap gap-2">
-            {(pending.target === "enemy" ? enemies : allies).map((c) => <Button key={c.id} variant="outline" disabled={busy} onClick={() => choose(c.id)}>{c.name} <span className="text-xs text-muted-foreground">♥ {c.hp}/{c.maxHp}</span></Button>)}
-            <Button variant="ghost" onClick={() => setPending(null)}>{t("cancel", lang)}</Button>
+            {(pending.target === "enemy" ? enemies : allies).map((c) => (
+              <Button
+                key={c.id}
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() => choose(c.id)}
+                className="h-10 text-xs md:text-sm px-3 border-border hover:border-gold"
+              >
+                {c.name} <span className="ml-1 text-[0.65rem] text-muted-foreground">♥ {c.hp}/{c.maxHp}</span>
+              </Button>
+            ))}
+            <Button variant="ghost" size="sm" className="h-10 text-xs px-3" onClick={() => setPending(null)}>
+              {t("cancel", lang)}
+            </Button>
           </div>
         </div>
       ) : tab === "abilities" ? (
-        <div className="mt-4 grid gap-2 sm:grid-cols-3">
+        <div className="mt-3 md:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
           {(ABILITIES[hero.id] ?? []).map((a) => {
             const Icon = ICON[a.kind];
             const cd = hero.cooldowns[a.id] ?? 0;
             const needsEnemy = a.kind === "attack" || a.kind === "stun" || a.kind === "aoe";
             const disabled = busy || cd > 0 || (needsEnemy && !enemies.length);
             return (
-              <Button key={a.id} variant="ghost" disabled={disabled} onClick={() => pick(a)} className="h-auto flex-col items-start gap-1 whitespace-normal border border-border bg-ink/50 p-3 text-left hover:border-gold hover:bg-secondary">
-                <span className="flex items-center gap-2 text-sm text-parchment"><Icon className="h-4 w-4 text-gold" />{a.name[lang]}</span>
-                <span className="text-xs text-gold">{effect(a, hero, lang)}</span>
-                <span className="text-xs text-muted-foreground">{cd > 0 ? `${t("cooldown", lang)}: ${cd}` : needsEnemy && !enemies.length ? t("noTargets", lang) : a.desc[lang]}</span>
+              <Button
+                key={a.id}
+                variant="ghost"
+                disabled={disabled}
+                onClick={() => pick(a)}
+                className="h-auto flex-col items-start gap-1 whitespace-normal border border-border bg-ink/50 p-2.5 sm:p-3 text-left hover:border-gold hover:bg-secondary"
+              >
+                <span className="flex items-center gap-1.5 text-xs sm:text-sm text-parchment font-medium">
+                  <Icon className="h-4 w-4 text-gold shrink-0" />
+                  {a.name[lang]}
+                </span>
+                <span className="text-[0.65rem] sm:text-xs text-gold">{effect(a, hero, lang)}</span>
+                <span className="text-[0.65rem] sm:text-xs text-muted-foreground leading-tight">
+                  {cd > 0 ? `${t("cooldown", lang)}: ${cd}` : needsEnemy && !enemies.length ? t("noTargets", lang) : a.desc[lang]}
+                </span>
               </Button>
             );
           })}
@@ -96,7 +136,7 @@ export function TurnPanel({ state, hero, lang, busy, onAction }: { state: GameSt
           {state.suggestions.length > 0 && <div className="mt-3"><p className="mb-2 flex items-center gap-1 text-xs text-muted-foreground"><Sparkles className="h-3 w-3" />{t("ideas", lang)}</p><div className="flex flex-wrap gap-2">{state.suggestions.map((s) => <button key={s} type="button" disabled={busy} className="border border-border px-2 py-1 text-xs text-muted-foreground hover:border-gold hover:text-parchment" onClick={() => setText(s)}>{s}</button>)}</div></div>}
         </form>
       ) : (
-        <div className="mt-4 grid gap-2 sm:grid-cols-2">
+        <div className="mt-3 md:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
           {hero.inventory.map((item) => {
             const heal = itemHeal(item.bonus);
             const used = hero.used.includes(item.id);
