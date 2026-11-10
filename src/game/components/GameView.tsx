@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
-import { ArrowLeft, BookOpen, Crown, LoaderCircle, RotateCcw, Target, Timer, MessageCircle } from "lucide-react";
+import { ArrowLeft, BookOpen, Crown, LoaderCircle, RotateCcw, Target, Timer, MessageCircle, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { campaignFor, ROMAN, t, type Lang } from "../i18n";
 import { heroSprite } from "../data";
-import { currentActor, TURN_SECONDS, type GameState } from "../engine";
+import { ACT_PROGRESS_GOAL, currentActor, TURN_SECONDS, type GameState } from "../engine";
+import { isSoundMuted, playClickSound, playCritSound, playDefeatSound, playVictorySound, setSoundMuted } from "../sound";
 import type { HeroAction } from "../turn";
 import { Scene } from "./Scene";
 import { TurnPanel } from "./TurnPanel";
@@ -41,6 +42,7 @@ function useCountdown(startedAt: number, active: boolean) {
 export function GameView(p: Props) {
   const { state, lang } = p;
   const [journal, setJournal] = useState(false);
+  const [muted, setMuted] = useState(() => isSoundMuted());
   const act = campaignFor(lang).acts[state.actIndex];
   const actor = currentActor(state);
   const heroTurn = actor?.type === "hero" ? actor.hero : null;
@@ -48,6 +50,7 @@ export function GameView(p: Props) {
   const playing = state.status === "playing" && !state.actReady;
   const left = useCountdown(state.turnStartedAt, !!p.timed && playing && !!heroTurn);
   const { onTimeout } = p;
+
   useEffect(() => {
     if (p.timed && playing && heroTurn && left <= 0 && onTimeout) {
       const id = setTimeout(onTimeout, 2500);
@@ -55,18 +58,36 @@ export function GameView(p: Props) {
     }
     return undefined;
   }, [p.timed, playing, heroTurn, left, onTimeout]);
+
+  useEffect(() => {
+    if (state.status === "victory") playVictorySound();
+    else if (state.status === "defeat") playDefeatSound();
+    else if (state.actReady) playVictorySound();
+    else if (state.lastEvents?.some((ev) => ev.kind === "crit")) playCritSound();
+  }, [state.status, state.actReady, state.log.length, state.lastEvents]);
+
   if (!act) return null;
   const latest = state.log.filter((e) => e.kind === "master").at(-1);
   const recent = state.log.slice(-6).filter((e) => e.kind === "roll" || e.kind === "enemy" || e.kind === "action" || e.kind === "system");
 
+  function toggleMute() {
+    const next = !muted;
+    setMuted(next);
+    setSoundMuted(next);
+    if (!next) playClickSound();
+  }
+
   return (
     <main className="min-h-dvh bg-background">
-      <header className="flex items-center justify-between gap-3 border-b border-border px-3 py-3 md:px-8">
-        <div className="flex items-center gap-3">
+      <header className="flex items-center justify-between gap-3 border-b border-border px-3 py-2.5 md:px-8 md:py-3">
+        <div className="flex items-center gap-2.5">
           <Button variant="ghost" size="icon" aria-label={t("mainMenu", lang)} onClick={p.onExit}><ArrowLeft /></Button>
-          <div><p className="font-display text-[0.55rem] text-gold">{t("gameTitle", lang).toUpperCase()}</p><p className="mt-1 text-xs text-muted-foreground">{t("gameSubtitle", lang)}</p></div>
+          <div><p className="font-display text-[0.55rem] text-gold">{t("gameTitle", lang).toUpperCase()}</p><p className="mt-0.5 text-xs text-muted-foreground">{t("gameSubtitle", lang)}</p></div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          <Button variant="outline" size="icon" aria-label={t("sound", lang)} aria-pressed={!muted} onClick={toggleMute}>
+            {muted ? <VolumeX className="h-4 w-4 text-muted-foreground" /> : <Volume2 className="h-4 w-4 text-gold" />}
+          </Button>
           <Button variant="outline" size="icon" className="lg:hidden" aria-label={t("chat", lang)} onClick={() => document.getElementById("chat")?.scrollIntoView({ behavior: "smooth" })}><MessageCircle /></Button>
           <Button variant="outline" size="icon" aria-label={t("journal", lang)} onClick={() => setJournal(true)}><BookOpen /></Button>
         </div>
@@ -96,10 +117,22 @@ export function GameView(p: Props) {
         <div className="grid gap-5 p-3 md:p-6 lg:grid-cols-[1fr_360px]">
           <div className="min-w-0 space-y-5">
             <section aria-label={t("story", lang)}>
-              <div className="flex items-start gap-2 border border-border bg-ink/60 p-3 text-sm text-muted-foreground"><Target className="mt-0.5 h-4 w-4 shrink-0 text-gold" /><span><span className="text-gold">{t("actGoal", lang)}:</span> {act.objective}</span></div>
+              <div className="flex flex-wrap items-center justify-between gap-2 border border-border bg-ink/60 p-3 text-sm text-muted-foreground">
+                <div className="flex items-start gap-2">
+                  <Target className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+                  <span><span className="text-gold">{t("actGoal", lang)}:</span> {act.objective}</span>
+                </div>
+                {!state.enemies.length && (
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    {Array.from({ length: ACT_PROGRESS_GOAL }, (_, idx) => (
+                      <span key={idx} className={`h-2 w-5 rounded-xs border border-gold/50 ${idx < (state.actProgress ?? 0) ? "bg-gold" : "bg-ink"}`} />
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="mt-3 flex gap-1">{campaignFor(lang).acts.map((a, i) => <span key={a.actNumber} className={`h-1.5 flex-1 ${i < state.actIndex ? "bg-gold" : i === state.actIndex ? "bg-gold/50" : "bg-secondary"}`} />)}</div>
               <h2 className="mt-5 font-display text-[0.6rem] text-gold">{t("masterTells", lang)}</h2>
-              <p className="story-copy mt-3 text-lg leading-relaxed text-parchment md:text-xl">{latest?.text ?? "…"}</p>
+              <p className="story-copy mt-3 text-base sm:text-lg leading-relaxed text-parchment md:text-xl">{latest?.text ?? "…"}</p>
               {recent.length > 0 && <ul className="mt-3 space-y-1">{recent.map((e) => <li key={e.id} className={`text-sm ${e.kind === "enemy" ? "text-hp" : e.kind === "roll" ? "text-gold" : "text-muted-foreground"}`}>{e.kind === "action" ? `${e.who}: ${e.text}` : e.text}</li>)}</ul>}
             </section>
 

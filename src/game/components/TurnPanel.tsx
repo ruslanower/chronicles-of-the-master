@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ABILITIES, itemHeal, type Ability } from "../content";
 import { itemSrc } from "../data";
 import { STAT_LABELS, t, type Lang } from "../i18n";
-import type { GameState, HeroState } from "../engine";
+import { ACT_PROGRESS_GOAL, type GameState, type HeroState } from "../engine";
+import { playAttackSound, playClickSound, playDiceSound, playHealSound } from "../sound";
 import type { HeroAction } from "../turn";
 
 const ICON = { attack: Swords, aoe: Flame, stun: Zap, heal: Heart, hide: EyeOff, shield: Shield } as const;
@@ -24,31 +25,38 @@ function effect(a: Ability, hero: HeroState, lang: Lang) {
 }
 
 export function TurnPanel({ state, hero, lang, busy, onAction }: { state: GameState; hero: HeroState; lang: Lang; busy: boolean; onAction: (a: HeroAction) => void }) {
-  const [tab, setTab] = useState<"abilities" | "free" | "items">("abilities");
-  const [pending, setPending] = useState<{ kind: "ability" | "item"; id: string; target: "enemy" | "ally" } | null>(null);
-  const [text, setText] = useState("");
   const enemies = state.enemies.filter((e) => e.hp > 0);
   const allies = state.party.filter((h) => h.hp > 0);
+  const [tab, setTab] = useState<"abilities" | "free" | "items">(() => (enemies.length > 0 ? "abilities" : "free"));
+  const [pending, setPending] = useState<{ kind: "ability" | "item"; id: string; target: "enemy" | "ally" } | null>(null);
+  const [text, setText] = useState("");
 
   function pick(a: Ability) {
+    playClickSound();
     if (a.kind === "attack" || a.kind === "stun") setPending({ kind: "ability", id: a.id, target: "enemy" });
     else if (a.kind === "heal" || a.kind === "hide") setPending({ kind: "ability", id: a.id, target: "ally" });
-    else onAction({ type: "ability", abilityId: a.id });
+    else {
+      playAttackSound();
+      onAction({ type: "ability", abilityId: a.id });
+    }
   }
   function choose(targetId: string) {
     if (!pending) return;
+    if (pending.target === "ally") playHealSound();
+    else playAttackSound();
     onAction(pending.kind === "ability" ? { type: "ability", abilityId: pending.id, targetId } : { type: "item", itemId: pending.id, targetId });
     setPending(null);
   }
   function submitFree() {
     if (!text.trim() || busy) return;
+    playDiceSound();
     onAction({ type: "free", text: text.trim() });
     setText("");
   }
 
   const tabs = [
     { id: "abilities" as const, icon: Swords, label: t("abilities", lang) },
-    { id: "free" as const, icon: PenLine, label: t("freeAction", lang) },
+    { id: "free" as const, icon: PenLine, label: t("freeAction", lang), badge: !enemies.length },
     { id: "items" as const, icon: Backpack, label: t("items", lang) },
   ];
 
@@ -66,14 +74,16 @@ export function TurnPanel({ state, hero, lang, busy, onAction }: { state: GameSt
             aria-selected={tab === x.id}
             variant="pixelGhost"
             data-active={tab === x.id}
-            className="px-1.5 sm:px-3 text-[0.6rem] sm:text-xs h-9 sm:h-10"
+            className="relative px-1.5 sm:px-3 text-[0.6rem] sm:text-xs h-9 sm:h-10"
             onClick={() => {
+              playClickSound();
               setTab(x.id);
               setPending(null);
             }}
           >
             <x.icon className="h-3.5 w-3.5 mr-1 shrink-0" />
             <span className="truncate">{x.label}</span>
+            {x.badge && tab !== "free" && <span className="ml-1 inline-block h-2 w-2 rounded-full bg-gold animate-ping" />}
           </Button>
         ))}
       </div>
@@ -128,12 +138,64 @@ export function TurnPanel({ state, hero, lang, busy, onAction }: { state: GameSt
         </div>
       ) : tab === "free" ? (
         <form className="mt-4" onSubmit={(e) => { e.preventDefault(); submitFree(); }}>
+          {!enemies.length && (
+            <div className="mb-2.5 flex items-center justify-between gap-2 rounded-xs border border-gold/40 bg-gold/10 px-3 py-1.5 text-xs text-parchment">
+              <span>
+                {lang === "en"
+                  ? "✦ Roleplay scene: describe your actions or pick an idea below to achieve the goal."
+                  : "✦ Сюжетна сцена: опишіть дію або оберіть ідею нижче, щоб виконати мету акту."}
+              </span>
+              <span className="shrink-0 font-display text-[0.55rem] text-gold">
+                {state.actProgress ?? 0}/{ACT_PROGRESS_GOAL}
+              </span>
+            </div>
+          )}
           <p className="text-xs text-muted-foreground">{t("freeHint", lang)}</p>
           <div className="mt-2 flex items-end gap-2">
-            <textarea value={text} onChange={(e) => setText(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); submitFree(); } }} enterKeyHint="send" maxLength={600} rows={2} disabled={busy} placeholder={t("freePlaceholder", lang)} className="story-copy min-h-16 w-full resize-y rounded-sm border border-input bg-ink p-3 text-base text-foreground outline-none focus:border-ring disabled:opacity-60" />
-            <Button variant="pixel" type="submit" disabled={busy || !text.trim()} aria-label={t("doIt", lang)} className="min-h-16 shrink-0 px-4"><Send /></Button>
+            <textarea
+              value={text}
+              onChange={(e) => setText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+                  e.preventDefault();
+                  submitFree();
+                }
+              }}
+              enterKeyHint="send"
+              maxLength={600}
+              rows={2}
+              disabled={busy}
+              placeholder={t("freePlaceholder", lang)}
+              className="story-copy min-h-16 w-full resize-y rounded-sm border border-input bg-ink p-3 text-base text-foreground outline-none focus:border-ring disabled:opacity-60"
+            />
+            <Button variant="pixel" type="submit" disabled={busy || !text.trim()} aria-label={t("doIt", lang)} className="min-h-16 shrink-0 px-4">
+              <Send />
+            </Button>
           </div>
-          {state.suggestions.length > 0 && <div className="mt-3"><p className="mb-2 flex items-center gap-1 text-xs text-muted-foreground"><Sparkles className="h-3 w-3" />{t("ideas", lang)}</p><div className="flex flex-wrap gap-2">{state.suggestions.map((s) => <button key={s} type="button" disabled={busy} className="border border-border px-2 py-1 text-xs text-muted-foreground hover:border-gold hover:text-parchment" onClick={() => setText(s)}>{s}</button>)}</div></div>}
+          {state.suggestions.length > 0 && (
+            <div className="mt-3">
+              <p className="mb-2 flex items-center gap-1 text-xs text-muted-foreground">
+                <Sparkles className="h-3 w-3 text-gold" />
+                {t("ideas", lang)}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {state.suggestions.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    disabled={busy}
+                    className="border border-border bg-ink/40 px-2.5 py-1.5 text-xs text-parchment/90 hover:border-gold hover:text-gold transition-colors"
+                    onClick={() => {
+                      playClickSound();
+                      setText(s);
+                    }}
+                  >
+                    {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </form>
       ) : (
         <div className="mt-3 md:mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -141,9 +203,25 @@ export function TurnPanel({ state, hero, lang, busy, onAction }: { state: GameSt
             const heal = itemHeal(item.bonus);
             const used = hero.used.includes(item.id);
             return (
-              <Button key={item.id} variant="ghost" disabled={busy || used} onClick={() => (heal != null ? setPending({ kind: "item", id: item.id, target: "ally" }) : (setTab("free"), setText(`${lang === "en" ? "I use" : "Використовую"} ${item.name}: `)))} className="h-auto justify-start gap-3 whitespace-normal border border-border bg-ink/50 p-2 text-left hover:border-gold hover:bg-secondary">
+              <Button
+                key={item.id}
+                variant="ghost"
+                disabled={busy || used}
+                onClick={() => {
+                  playClickSound();
+                  if (heal != null) setPending({ kind: "item", id: item.id, target: "ally" });
+                  else {
+                    setTab("free");
+                    setText(`${lang === "en" ? "I use" : "Використовую"} «${item.name}»: `);
+                  }
+                }}
+                className="h-auto justify-start gap-3 whitespace-normal border border-border bg-ink/50 p-2 text-left hover:border-gold hover:bg-secondary"
+              >
                 <img src={itemSrc(item.artKey)} alt="" width={160} height={160} className="pixel h-10 w-10 object-contain" />
-                <span className="min-w-0"><span className="block text-sm text-parchment">{item.name}</span><span className="block text-xs text-muted-foreground">{used ? "✓" : item.bonus}</span></span>
+                <span className="min-w-0">
+                  <span className="block text-sm text-parchment">{item.name}</span>
+                  <span className="block text-xs text-muted-foreground">{used ? "✓" : item.bonus}</span>
+                </span>
               </Button>
             );
           })}

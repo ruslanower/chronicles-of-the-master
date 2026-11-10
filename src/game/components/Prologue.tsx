@@ -27,6 +27,7 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
   useEffect(() => {
     const a = new Audio(prologueAudio(lang, i));
     a.muted = muted;
+    a.preservesPitch = true;
     a.playbackRate = speed;
     audio.current = a;
     a.onended = () => setTimeout(() => (last ? undefined : setI((x) => Math.min(x + 1, PROLOGUE.length - 1))), 300);
@@ -40,6 +41,7 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
 
   useEffect(() => {
     if (audio.current) {
+      audio.current.preservesPitch = true;
       audio.current.playbackRate = speed;
     }
   }, [speed]);
@@ -56,16 +58,19 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
 
   return (
     <main className="relative flex min-h-dvh flex-col justify-end overflow-hidden bg-ink select-none">
-      {PROLOGUE.map((s, k) => (
-        <img
-          key={s.image}
-          src={s.image}
-          alt=""
-          width={1376}
-          height={768}
-          className={`pixel absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ${k === i ? "animate-pan opacity-85" : "opacity-0"}`}
-        />
-      ))}
+      {PROLOGUE.map((s, k) =>
+        Math.abs(k - i) <= 1 ? (
+          <img
+            key={s.image}
+            src={s.image}
+            alt=""
+            width={1376}
+            height={768}
+            loading={k === i ? "eager" : "lazy"}
+            className={`pixel absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ${k === i ? "animate-pan opacity-85" : "opacity-0"}`}
+          />
+        ) : null,
+      )}
       <div className="absolute inset-0 bg-fade-up opacity-90" />
       <div className="scanlines absolute inset-0" />
 

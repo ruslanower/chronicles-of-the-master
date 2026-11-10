@@ -22,8 +22,8 @@ function applyReply(state: GameState, reply: MasterReply, kind: NarrateRequest["
 }
 
 /**
- * Full hero turn: resolve the action, let the Master narrate, then play every enemy turn
- * until a hero acts again. Pure apart from the narrator; on error nothing is committed.
+ * Full hero turn: resolve the action, run any enemy counter-turns, and let the Master narrate
+ * in a single combined roundtrip for fast pacing.
  */
 export async function playHeroTurn(state: GameState, heroId: string, action: HeroAction, narrate: Narrator, rng: Rng = Math.random, now = Date.now()): Promise<GameState> {
   const actor = currentActor(state);
@@ -34,19 +34,24 @@ export async function playHeroTurn(state: GameState, heroId: string, action: Her
 
   if (action.type === "ability" || action.type === "item") {
     const o = action.type === "ability" ? useAbility(s, heroId, action.abilityId, action.targetId, rng) : useItem(s, heroId, action.itemId, action.targetId);
-    s = o.state;
+    s = advance(o.state, now);
+    const enemies = runEnemies(s, rng, now);
+    s = enemies.state;
+    const combinedSummary = enemies.summaries.length ? `${o.summary}\n---\n${enemies.summaries.join("\n")}` : o.summary;
     let reply: MasterReply;
     try {
-      reply = await narrate(s, { kind: "mechanic", summary: o.summary });
+      reply = await narrate(s, { kind: "mechanic", summary: combinedSummary });
     } catch {
-      reply = generateFallbackMasterReply(s, { kind: "mechanic", summary: o.summary });
+      reply = generateFallbackMasterReply(s, { kind: "mechanic", summary: combinedSummary });
     }
-    s = applyReply(s, reply, "mechanic");
-  } else if (action.type === "free") {
+    return applyReply(s, reply, "mechanic");
+  }
+
+  if (action.type === "free") {
     const text = action.text.trim().slice(0, 600);
     if (!text) throw new Error("empty");
     const roll = d20(rng);
-    s = appendLog(s, hero.name, "action", text);
+    s = appendLog({ ...s, lastEvents: [], lastRoll: null }, hero.name, "action", text);
     let reply: MasterReply;
     try {
       reply = await narrate(s, { kind: "free", text, d20: roll });
@@ -58,9 +63,19 @@ export async function playHeroTurn(state: GameState, heroId: string, action: Her
       const dc = clamp(reply.check.dc, 5, 20);
       const ok = roll === 20 || (roll !== 1 && roll + bonus >= dc);
       const en = s.lang === "en";
-      s = appendLog(s, "D20", "roll", `${roll} + ${bonus} = ${roll + bonus} • ${en ? "DC" : "Складність"} ${dc} • ${ok ? (en ? "Success" : "Успіх") : en ? "Fail" : "Невдача"}${roll === 20 ? " • CRIT!" : roll === 1 ? (en ? " • Critical fail!" : " • Критичний провал!") : ""}`);
-      // A failed check can't deal damage to enemies.
+      s = { ...s, lastRoll: { value: roll, bonus, total: roll + bonus, label: reply.check.stat.toUpperCase() } };
+      s = appendLog(
+        s,
+        "D20",
+        "roll",
+        `${roll} + ${bonus} = ${roll + bonus} • ${en ? "DC" : "Складність"} ${dc} • ${ok ? (en ? "Success" : "Успіх") : en ? "Fail" : "Невдача"}${roll === 20 ? " • CRIT!" : roll === 1 ? (en ? " • Critical fail!" : " • Критичний провал!") : ""}`,
+      );
       if (!ok) reply.hpChanges = reply.hpChanges.filter((c) => !s.enemies.some((e) => e.name === c.target));
+      if (ok && s.enemies.length === 0) {
+        s = { ...s, actProgress: (s.actProgress ?? 0) + 1 };
+      }
+    } else if (s.enemies.length === 0) {
+      s = { ...s, actProgress: (s.actProgress ?? 0) + 1 };
     }
     s = applyReply(s, reply, "free");
   } else {
