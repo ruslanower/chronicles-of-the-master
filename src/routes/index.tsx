@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { TitleScreen } from "@/game/components/TitleScreen";
 import { PartySelect } from "@/game/components/PartySelect";
 import { Prologue } from "@/game/components/Prologue";
@@ -12,9 +12,16 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "Хроніки Майстра: Корона Чорної Зірки — гра" },
-      { name: "description", content: "Зберіть загін повстанців, грайте з друзями онлайн і пройдіть вісім актів темного фентезі з ШІ-Майстром." },
+      {
+        name: "description",
+        content:
+          "Зберіть загін повстанців, грайте з друзями онлайн і пройдіть вісім актів темного фентезі з ШІ-Майстром.",
+      },
       { property: "og:title", content: "Хроніки Майстра: Корона Чорної Зірки" },
-      { property: "og:description", content: "Онлайн-пригода з D20, уміннями героїв і живим Майстром гри." },
+      {
+        property: "og:description",
+        content: "Онлайн-пригода з D20, уміннями героїв і живим Майстром гри.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -31,6 +38,10 @@ function Index() {
   const [state, setState] = useState<GameState | null>(null);
   const [chat, setChat] = useState<ChatMsg[]>([]);
   const [saveError, setSaveError] = useState(false);
+  const stateRef = useRef<GameState | null>(null);
+  const chatRef = useRef<ChatMsg[]>([]);
+  stateRef.current = state;
+  chatRef.current = chat;
 
   useEffect(() => {
     const l = localStorage.getItem("chronicles-lang");
@@ -38,21 +49,90 @@ function Index() {
     try {
       const raw = localStorage.getItem(SAVE_KEY);
       const saved = raw ? (JSON.parse(raw) as Save) : null;
-      if (saved?.version === 2 && saved.state?.version === 2 && Array.isArray(saved.state.party)) { setState(saved.state); setChat(saved.chat ?? []); }
-    } catch { /* ignore broken save */ }
+      if (saved?.version === 2 && saved.state?.version === 2 && Array.isArray(saved.state.party)) {
+        setState(saved.state);
+        setChat(saved.chat ?? []);
+      }
+    } catch {
+      /* ignore broken save */
+    }
   }, []);
 
-  function persist(s: GameState, c: ChatMsg[]) {
-    try { localStorage.setItem(SAVE_KEY, JSON.stringify({ version: 2, state: s, chat: c })); setSaveError(false); }
-    catch { setSaveError(true); }
-  }
-  const changeLang = (l: Lang) => { setLang(l); localStorage.setItem("chronicles-lang", l); };
+  const persist = useCallback((s: GameState, c: ChatMsg[]) => {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify({ version: 2, state: s, chat: c }));
+      setSaveError(false);
+    } catch {
+      setSaveError(true);
+    }
+  }, []);
 
-  return <>
-    {screen === "title" && <TitleScreen lang={lang} onLang={changeLang} onStart={() => setScreen("prologue")} onContinue={state ? () => setScreen("game") : undefined} />}
-    {screen === "prologue" && <Prologue lang={lang} onDone={() => setScreen("party")} />}
-    {screen === "party" && <PartySelect lang={lang} onBack={() => setScreen("title")} onConfirm={(ids) => { const s = newGame(ids, lang); setState(s); setChat([]); persist(s, []); setScreen("game"); }} />}
-    {screen === "game" && state && <SoloGame state={state} chat={chat} onUpdate={(s) => { setState(s); persist(s, chat); }} onChat={(c) => { setChat(c); if (state) persist(state, c); }} onExit={() => setScreen("title")} />}
-    {saveError && <p role="alert" className="fixed bottom-3 left-3 z-50 max-w-xs border border-border bg-ink p-3 text-sm text-hp">{t("saveError", lang)}</p>}
-  </>;
+  const handleUpdate = useCallback(
+    (s: GameState) => {
+      stateRef.current = s;
+      setState(s);
+      persist(s, chatRef.current);
+    },
+    [persist],
+  );
+
+  const handleChat = useCallback(
+    (c: ChatMsg[]) => {
+      chatRef.current = c;
+      setChat(c);
+      if (stateRef.current) persist(stateRef.current, c);
+    },
+    [persist],
+  );
+
+  const changeLang = (l: Lang) => {
+    setLang(l);
+    localStorage.setItem("chronicles-lang", l);
+  };
+
+  return (
+    <>
+      {screen === "title" && (
+        <TitleScreen
+          lang={lang}
+          onLang={changeLang}
+          onStart={() => setScreen("prologue")}
+          onContinue={state ? () => setScreen("game") : undefined}
+        />
+      )}
+      {screen === "prologue" && <Prologue lang={lang} onDone={() => setScreen("party")} />}
+      {screen === "party" && (
+        <PartySelect
+          lang={lang}
+          onBack={() => setScreen("title")}
+          onConfirm={(ids) => {
+            const s = newGame(ids, lang);
+            stateRef.current = s;
+            chatRef.current = [];
+            setState(s);
+            setChat([]);
+            persist(s, []);
+            setScreen("game");
+          }}
+        />
+      )}
+      {screen === "game" && state && (
+        <SoloGame
+          state={state}
+          chat={chat}
+          onUpdate={handleUpdate}
+          onChat={handleChat}
+          onExit={() => setScreen("title")}
+        />
+      )}
+      {saveError && (
+        <p
+          role="alert"
+          className="fixed bottom-3 left-3 z-50 max-w-xs border border-border bg-ink p-3 text-sm text-hp"
+        >
+          {t("saveError", lang)}
+        </p>
+      )}
+    </>
+  );
 }

@@ -1,5 +1,5 @@
 import { campaignFor } from "./i18n";
-import { currentActor, type GameState } from "./engine";
+import { ACT_PROGRESS_GOAL, currentActor, enemyAC, heroAC, type GameState } from "./engine";
 
 export type NarrateRequest =
   | { kind: "mechanic"; summary: string }
@@ -13,35 +13,70 @@ export function buildMasterPrompt(state: GameState, req: NarrateRequest) {
   const act = c.acts[state.actIndex];
   const en = state.lang === "en";
   const actor = currentActor(state);
-  const heroName = actor?.type === "hero" ? actor.hero.name : "";
-  const lang = en ? "Reply ONLY in English." : "Відповідай ВИКЛЮЧНО українською.";
+  const activeHero = actor?.type === "hero" ? actor.hero : state.party[0];
+  const heroName = activeHero?.name ?? "";
+  const heroItems =
+    activeHero?.inventory
+      .filter(
+        (it) => it.equipped || activeHero.used.filter((id) => id === it.id).length < (it.qty ?? 1),
+      )
+      .map((it) => `«${it.name}» (${it.bonus ?? ""})`)
+      .join(", ") || "-";
+  const lang = en
+    ? "Reply ONLY in fluent, atmospheric English."
+    : "Відповідай ВИКЛЮЧНО багатою, живою літературною українською мовою (без суржику, русизмів і кальок).";
   const instructions = `${c.worldRulesForAI}
 
 You are a LIVE GAME MASTER and DIRECTOR (D&D style). ${lang}
-Style: atmospheric, cinematic, 2–4 short sentences with concrete sensory details. Address heroes by name. No markdown.
-You actively shape events: you may help clever or kind ideas, and punish rude, reckless or foolish behaviour with consequences. Occasionally add a twist (a trap, an ally, an alarm).
-Background characters (e.g. secret tavern guests) are just atmosphere — never make them the focus.
+Style: atmospheric, cinematic, 2–4 short sentences with concrete sensory details. Address heroes by their exact names. No markdown.
+CRITICAL ACCURACY RULES:
+1. NEVER contradict resolved dice results: if the summary says ПРОМАХ / MISS, describe a miss or blocked blow; if ВЛУЧАННЯ / HIT or ПЕРЕМОЖЕНИЙ / DEFEATED, describe that exact impact.
+2. For kind "mechanic" and "enemies", dice and HP were ALREADY applied by the game engine — return hpChanges: [] and check: null.
+3. For kind "free", evaluate the player's idea against the current ACT GOAL and ACTIVE HERO ITEMS. Set check: { stat, dc } (dc 8–15, lower if using a relevant signature item). Only set actComplete: true when SCENE PROGRESS reaches ${ACT_PROGRESS_GOAL}/${ACT_PROGRESS_GOAL} or the final act goal is truly fulfilled.
+4. Background characters (e.g. secret tavern guests) are atmosphere only — never make them the focus.
 Output fields:
-- narration: the story text.
-- check: only for kind "free" when the action is risky (otherwise null): stat (str/agi/int/cha) and dc (8 easy … 18 very hard). Talking, looking around or simple actions need NO check.
-- hpChanges: HP changes (negative = damage, positive = healing). target = exact hero or enemy name. Keep it small (1–6). For "mechanic" and "enemies" the dice were already resolved — return [] unless adding a tiny twist.
-- actComplete: true only when the party truly achieved the act goal (by force, cunning, escape or diplomacy).${act && state.actIndex === c.acts.length - 1 ? " This is the FINALE — an epic ending when complete." : ""}
-- suggestions: 3 short (max 8 words) ideas for the next actions.`;
+- narration: the story text (2–4 sentences in ${en ? "English" : "Ukrainian"}).
+- check: only for kind "free" when risky (otherwise null): stat (str/agi/int/cha) and dc (8–16).
+- hpChanges: HP changes for "free" or "chat" (negative = damage, positive = healing, target = exact hero or enemy name). Empty [] for "mechanic" and "enemies".
+- actComplete: true ONLY when the party completed all steps of the act goal.${act && state.actIndex === c.acts.length - 1 ? " This is the FINALE — deliver an epic ending when complete." : ""}
+- suggestions: 3 short (max 8 words, in ${en ? "English" : "Ukrainian"}) concrete tactical/roleplay ideas for the current act.`;
 
-  const party = state.party.map((h) => `${h.name} HP ${h.hp}/${h.maxHp}; STR ${h.stats.str} AGI ${h.stats.agi} INT ${h.stats.int} CHA ${h.stats.cha}${h.status.hidden ? "; hidden" : ""}`).join("\n");
-  const enemies = state.enemies.filter((e) => e.hp > 0).map((e) => `${e.name} HP ${e.hp}/${e.maxHp}`).join(", ") || "-";
-  const history = state.log.slice(-14).map((e) => `${e.who}: ${e.text}`).join("\n");
+  const party = state.party
+    .map(
+      (h) =>
+        `${h.name} HP ${h.hp}/${h.maxHp} AC ${heroAC(h)}; STR ${h.stats.str} AGI ${h.stats.agi} INT ${h.stats.int} CHA ${h.stats.cha}${h.status.hidden ? "; hidden" : ""}${h.status.shield ? "; shielded" : ""}${h.status.stunned ? "; stunned" : ""}`,
+    )
+    .join("\n");
+  const enemies =
+    state.enemies
+      .filter((e) => e.hp > 0)
+      .map(
+        (e) =>
+          `${e.name} HP ${e.hp}/${e.maxHp} AC ${enemyAC(e)}${e.status.shield ? " [shielded]" : ""}${e.status.stunned ? " [stunned]" : ""}`,
+      )
+      .join(", ") || "-";
+  const history = state.log
+    .slice(-14)
+    .map((e) => `${e.who}: ${e.text}`)
+    .join("\n");
   let turn = "";
-  if (req.kind === "mechanic") turn = `HERO ACTION (dice already resolved — narrate exactly this outcome):\n${req.summary}`;
-  else if (req.kind === "free") turn = `${heroName} TRIES: «${req.text}»\nPre-rolled D20 (use only if you set a check): ${req.d20}. If the action succeeds against an enemy you may damage it via hpChanges (up to -8).`;
-  else if (req.kind === "enemies") turn = `ENEMY TURN (dice already resolved — narrate these attacks dramatically in 1–3 sentences):\n${req.summary.join("\n")}`;
-  else turn = `OUT-OF-TURN MESSAGE from player ${req.from} to the Master: «${req.text}»\nAnswer as the director in 1–3 sentences. You may give a hint, or a small consequence (hpChanges ±1..3) if they deserve it. check = null, actComplete = false.`;
+  if (req.kind === "mechanic")
+    turn = `HERO ACTION (dice already resolved — narrate exactly this outcome):\n${req.summary}`;
+  else if (req.kind === "free")
+    turn = `${heroName} TRIES: «${req.text}»\nPre-rolled D20 (use only if you set a check): ${req.d20}. If the action succeeds against an enemy you may damage it via hpChanges (up to -8).`;
+  else if (req.kind === "enemies")
+    turn = `ENEMY AI TURN (dice already resolved — narrate these tactical enemy moves dramatically in 1–3 sentences):\n${req.summary.join("\n")}`;
+  else
+    turn = `OUT-OF-TURN MESSAGE from player ${req.from} to the Master: «${req.text}»\nAnswer as the director in 1–3 sentences. You may give a hint, or a small consequence (hpChanges ±1..3) if they deserve it. check = null, actComplete = false.`;
+
+  const progressLine = `\nSCENE PROGRESS: ${state.actProgress ?? 0}/${ACT_PROGRESS_GOAL}`;
 
   const prompt = `SCENE: ${act?.title} — ${act?.locationName}
-ACT GOAL: ${act?.objective}
+ACT GOAL: ${act?.objective}${progressLine}
 ENEMIES: ${enemies}
 PARTY:
 ${party}
+ACTIVE HERO (${heroName}) ITEMS: ${heroItems}
 RECENT EVENTS:
 ${history || "(start of act)"}
 

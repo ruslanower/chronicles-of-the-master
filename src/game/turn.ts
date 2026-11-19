@@ -1,4 +1,23 @@
-import { advance, appendLog, appendMaster, applyMasterHp, checkOutcome, clamp, currentActor, d20, runEnemies, useAbility, useItem, type GameState, type MasterReply, type Rng } from "./engine";
+import { itemHeal } from "./content";
+import {
+  ACT_PROGRESS_GOAL,
+  advance,
+  appendLog,
+  appendMaster,
+  applyMasterHp,
+  checkOutcome,
+  clamp,
+  currentActor,
+  d20,
+  resolveAbility,
+  resolveItem,
+  runEnemies,
+  upcomingEnemyIds,
+  type GameState,
+  type MasterReply,
+  type Rng,
+} from "./engine";
+import type { EnemyAiDecider, EnemyDecision } from "./enemyAi";
 import type { NarrateRequest } from "./prompt";
 import { generateFallbackMasterReply } from "./fallbackNarrator";
 
@@ -12,18 +31,43 @@ export type Narrator = (state: GameState, req: NarrateRequest) => Promise<Master
 
 function applyReply(state: GameState, reply: MasterReply, kind: NarrateRequest["kind"]): GameState {
   let s = appendMaster(state, reply.narration);
-  const twist = kind === "mechanic" || kind === "enemies" || kind === "chat";
-  s = applyMasterHp(s, reply.hpChanges, twist ? { heroMin: -3, heroMax: 3, enemyMin: -3 } : { heroMin: -6, heroMax: 12, enemyMin: -8 });
+  if (kind === "free" || kind === "chat") {
+    const twist = kind === "chat";
+    s = applyMasterHp(
+      s,
+      reply.hpChanges,
+      twist
+        ? { heroMin: -3, heroMax: 3, enemyMin: -3 }
+        : { heroMin: -6, heroMax: 12, enemyMin: -8 },
+    );
+  }
   if (reply.suggestions.length) s = { ...s, suggestions: reply.suggestions.slice(0, 3) };
-  if (reply.actComplete && kind !== "chat" && s.status === "playing") {
+  const canCompleteEarly =
+    kind === "free" &&
+    ((s.actProgress ?? 0) >= ACT_PROGRESS_GOAL || s.enemies.every((e) => e.hp <= 0));
+  if (reply.actComplete && canCompleteEarly && s.status === "playing") {
     s = s.actIndex >= 7 ? { ...s, status: "victory" } : { ...s, actReady: true };
   }
   return checkOutcome(s);
 }
 
+async function resolveAiEnemyDecisions(
+  state: GameState,
+  decideEnemies?: EnemyAiDecider,
+): Promise<Record<string, EnemyDecision>> {
+  if (!decideEnemies) return {};
+  const ids = upcomingEnemyIds(state);
+  if (!ids.length) return {};
+  try {
+    return await decideEnemies(state, ids);
+  } catch {
+    return {};
+  }
+}
+
 /**
- * Full hero turn: resolve the action, run any enemy counter-turns, and let the Master narrate
- * in a single combined roundtrip for fast pacing.
+ * Full hero turn: resolve the action, let Enemy AI run any enemy counter-turns,
+ * and let the Master narrate in a single combined roundtrip for fast pacing.
  */
 export async function playHeroTurn(
   state: GameState,
@@ -33,6 +77,7 @@ export async function playHeroTurn(
   rng: Rng = Math.random,
   now = Date.now(),
   onProgress?: (intermediate: GameState) => void,
+  decideEnemies?: EnemyAiDecider,
 ): Promise<GameState> {
   const actor = currentActor(state);
   if (state.status !== "playing" || state.actReady) throw new Error("not playing");
@@ -41,13 +86,24 @@ export async function playHeroTurn(
   let s = state;
 
   if (action.type === "ability" || action.type === "item") {
-    const o = action.type === "ability" ? useAbility(s, heroId, action.abilityId, action.targetId, rng) : useItem(s, heroId, action.itemId, action.targetId);
+    const o =
+      action.type === "ability"
+        ? resolveAbility(s, heroId, action.abilityId, action.targetId, rng)
+        : resolveItem(s, heroId, action.itemId, action.targetId);
     s = advance(o.state, now);
-    const enemies = runEnemies(s, rng, now);
-    s = enemies.state;
-    // Immediately emit the mechanical result so HP bars, floating damage, and D20 rolls appear with 0ms delay!
+    // Immediately emit the hero's mechanical result so HP bars, floating damage, and D20 rolls appear with 0ms delay!
     onProgress?.(s);
-    const combinedSummary = enemies.summaries.length ? `${o.summary}\n---\n${enemies.summaries.join("\n")}` : o.summary;
+
+    const decisions = await resolveAiEnemyDecisions(s, decideEnemies);
+    const enemies = runEnemies(s, rng, now, decisions);
+    s = enemies.state;
+    if (enemies.summaries.length) {
+      onProgress?.(s);
+    }
+
+    const combinedSummary = enemies.summaries.length
+      ? `${o.summary}\n---\n${enemies.summaries.join("\n")}`
+      : o.summary;
     let reply: MasterReply;
     try {
       reply = await narrate(s, { kind: "mechanic", summary: combinedSummary });
@@ -69,20 +125,51 @@ export async function playHeroTurn(
     } catch {
       reply = generateFallbackMasterReply(s, { kind: "free", text, d20: roll });
     }
+    const usedItem = hero.inventory.find(
+      (it) =>
+        !it.equipped &&
+        itemHeal(it.bonus) == null &&
+        text.toLowerCase().includes(it.name.toLowerCase()) &&
+        hero.used.filter((id) => id === it.id).length < (it.qty ?? 1),
+    );
+    if (usedItem) {
+      s = {
+        ...s,
+        party: s.party.map((h) =>
+          h.id === hero.id ? { ...h, used: [...h.used, usedItem.id] } : h,
+        ),
+      };
+    }
     if (reply.check) {
       const bonus = hero.stats[reply.check.stat] ?? 0;
       const dc = clamp(reply.check.dc, 5, 20);
       const ok = roll === 20 || (roll !== 1 && roll + bonus >= dc);
       const en = s.lang === "en";
-      s = { ...s, lastRoll: { value: roll, bonus, total: roll + bonus, label: reply.check.stat.toUpperCase() } };
+      s = {
+        ...s,
+        lastRoll: {
+          value: roll,
+          bonus,
+          total: roll + bonus,
+          label: reply.check.stat.toUpperCase(),
+        },
+      };
       s = appendLog(
         s,
         "D20",
         "roll",
         `${roll} + ${bonus} = ${roll + bonus} • ${en ? "DC" : "Складність"} ${dc} • ${ok ? (en ? "Success" : "Успіх") : en ? "Fail" : "Невдача"}${roll === 20 ? " • CRIT!" : roll === 1 ? (en ? " • Critical fail!" : " • Критичний провал!") : ""}`,
       );
-      if (!ok) reply.hpChanges = reply.hpChanges.filter((c) => !s.enemies.some((e) => e.name === c.target));
-      if (ok && s.enemies.length === 0) {
+      if (!ok) {
+        reply.hpChanges = reply.hpChanges.filter(
+          (c) =>
+            !s.enemies.some(
+              (e) => e.id === c.target || e.name.toLowerCase() === c.target.trim().toLowerCase(),
+            ),
+        );
+      }
+      const isNonDamageObjectiveMove = !reply.hpChanges.some((c) => c.delta < 0);
+      if (ok && (s.enemies.length === 0 || isNonDamageObjectiveMove)) {
         s = { ...s, actProgress: (s.actProgress ?? 0) + 1 };
       }
     } else if (s.enemies.length === 0) {
@@ -94,36 +181,61 @@ export async function playHeroTurn(
   }
 
   s = advance(s, now);
-  const enemies = runEnemies(s, rng, now);
+  const decisions = await resolveAiEnemyDecisions(s, decideEnemies);
+  const enemies = runEnemies(s, rng, now, decisions);
   s = enemies.state;
   if (enemies.summaries.length && s.status !== "victory") {
     onProgress?.(s);
     try {
-      s = applyReply(s, await narrate(s, { kind: "enemies", summary: enemies.summaries }), "enemies");
+      s = applyReply(
+        s,
+        await narrate(s, { kind: "enemies", summary: enemies.summaries }),
+        "enemies",
+      );
     } catch {
-      s = applyReply(s, generateFallbackMasterReply(s, { kind: "enemies", summary: enemies.summaries }), "enemies");
+      s = applyReply(
+        s,
+        generateFallbackMasterReply(s, { kind: "enemies", summary: enemies.summaries }),
+        "enemies",
+      );
     }
   }
   return s;
 }
 
 /** Enemies act first at the start of an act if they won initiative. */
-export async function playOpeningEnemies(state: GameState, narrate: Narrator, rng: Rng = Math.random, now = Date.now()): Promise<GameState> {
+export async function playOpeningEnemies(
+  state: GameState,
+  narrate: Narrator,
+  rng: Rng = Math.random,
+  now = Date.now(),
+  decideEnemies?: EnemyAiDecider,
+): Promise<GameState> {
   const a = currentActor(state);
   if (!a || a.type !== "enemy") return state;
-  const r = runEnemies(state, rng, now);
+  const decisions = await resolveAiEnemyDecisions(state, decideEnemies);
+  const r = runEnemies(state, rng, now, decisions);
   let s = r.state;
   if (r.summaries.length) {
     try {
       s = applyReply(s, await narrate(s, { kind: "enemies", summary: r.summaries }), "enemies");
     } catch {
-      s = applyReply(s, generateFallbackMasterReply(s, { kind: "enemies", summary: r.summaries }), "enemies");
+      s = applyReply(
+        s,
+        generateFallbackMasterReply(s, { kind: "enemies", summary: r.summaries }),
+        "enemies",
+      );
     }
   }
   return s;
 }
 
-export async function masterChat(state: GameState, from: string, text: string, narrate: Narrator): Promise<{ state: GameState; reply: string }> {
+export async function masterChat(
+  state: GameState,
+  from: string,
+  text: string,
+  narrate: Narrator,
+): Promise<{ state: GameState; reply: string }> {
   let reply: MasterReply;
   try {
     reply = await narrate(state, { kind: "chat", from, text: text.slice(0, 400) });

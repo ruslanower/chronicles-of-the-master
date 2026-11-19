@@ -1,4 +1,5 @@
 import type { GameState, MasterReply } from "./engine";
+import { buildEnemyAiPrompt, parseEnemyAiResponse, type EnemyDecision } from "./enemyAi";
 import { buildMasterPrompt, type NarrateRequest } from "./prompt";
 
 const AI_KEY_STORAGE = "chronicles-ai-key";
@@ -36,6 +37,10 @@ export function setStoredAiKey(key: string): void {
   }
 }
 
+export function isFreeClientAiBackedOff(): boolean {
+  return Date.now() < freeEndpointBackoffUntil;
+}
+
 function parseClientMasterJson(raw: string): MasterReply | null {
   const trimmed = raw.trim();
   const start = trimmed.indexOf("{");
@@ -50,7 +55,10 @@ function parseClientMasterJson(raw: string): MasterReply | null {
       const c = obj["check"] as Record<string, unknown>;
       const stat = c["stat"];
       const dc = Number(c["dc"]);
-      if ((stat === "str" || stat === "agi" || stat === "int" || stat === "cha") && Number.isFinite(dc)) {
+      if (
+        (stat === "str" || stat === "agi" || stat === "int" || stat === "cha") &&
+        Number.isFinite(dc)
+      ) {
         check = { stat, dc };
       }
     }
@@ -66,7 +74,9 @@ function parseClientMasterJson(raw: string): MasterReply | null {
       : [];
 
     const suggestions = Array.isArray(obj["suggestions"])
-      ? obj["suggestions"].filter((s): s is string => typeof s === "string" && s.trim().length > 0).slice(0, 3)
+      ? obj["suggestions"]
+          .filter((s): s is string => typeof s === "string" && s.trim().length > 0)
+          .slice(0, 3)
       : [];
 
     return {
@@ -81,12 +91,12 @@ function parseClientMasterJson(raw: string): MasterReply | null {
   }
 }
 
-async function callOpenAiCompatible(
+async function fetchOpenAiContent(
   url: string,
   headers: Record<string, string>,
   body: Record<string, unknown>,
   timeoutMs: number,
-): Promise<MasterReply | null> {
+): Promise<string | null> {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
   try {
@@ -100,9 +110,7 @@ async function callOpenAiCompatible(
     const data = (await res.json()) as {
       choices?: Array<{ message?: { content?: string } }>;
     };
-    const content = data.choices?.[0]?.message?.content;
-    if (!content) return null;
-    return parseClientMasterJson(content);
+    return data.choices?.[0]?.message?.content ?? null;
   } catch {
     return null;
   } finally {
@@ -110,33 +118,88 @@ async function callOpenAiCompatible(
   }
 }
 
-export async function narrateClientAi(state: GameState, req: NarrateRequest): Promise<MasterReply | null> {
+const CLIENT_GEMINI_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-flash-latest",
+  "gemini-2.0-flash",
+];
+let preferredClientGeminiModel: string | null = null;
+
+async function fetchGeminiNativeContent(
+  apiKey: string,
+  systemPrompt: string,
+  prompt: string,
+  temperature: number,
+  timeoutMs: number,
+): Promise<string | null> {
+  const ordered = preferredClientGeminiModel
+    ? [
+        preferredClientGeminiModel,
+        ...CLIENT_GEMINI_MODELS.filter((m) => m !== preferredClientGeminiModel),
+      ]
+    : CLIENT_GEMINI_MODELS;
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    for (const model of ordered) {
+      if (controller.signal.aborted) break;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+      try {
+        const res = await fetch(url, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: `${systemPrompt}\n\n${prompt}` }] }],
+            generationConfig: {
+              responseMimeType: "application/json",
+              temperature,
+            },
+          }),
+          signal: controller.signal,
+        });
+        if (!res.ok) continue;
+        const data = (await res.json()) as {
+          candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
+        };
+        const text = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
+        if (text) {
+          preferredClientGeminiModel = model;
+          return text;
+        }
+      } catch {
+        // try next model
+      }
+    }
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function callConfiguredOrFreeClientAi(
+  systemPrompt: string,
+  prompt: string,
+  temperature = 0.85,
+  freeTimeoutMs = 3600,
+): Promise<string | null> {
   if (typeof window === "undefined") return null;
+  const customKey =
+    getStoredAiKey() || (import.meta.env["VITE_GEMINI_API_KEY"] as string | undefined) || "";
 
-  const { instructions, prompt } = buildMasterPrompt(state, req);
-  const systemPrompt = `${instructions}\n${JSON_FORMAT_INSTRUCTION}`;
-  const customKey = getStoredAiKey() || (import.meta.env["VITE_GEMINI_API_KEY"] as string | undefined) || "";
-
-  // 1. User-supplied or env Gemini / Groq / OpenAI key (super fast < 1s)
   if (customKey) {
-    if (customKey.startsWith("AIza")) {
-      const reply = await callOpenAiCompatible(
-        "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-        { Authorization: `Bearer ${customKey}` },
-        {
-          model: "gemini-2.0-flash",
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: prompt },
-          ],
-          temperature: 0.85,
-          response_format: { type: "json_object" },
-        },
+    if (customKey.startsWith("AIza") || customKey.startsWith("AQ.")) {
+      const content = await fetchGeminiNativeContent(
+        customKey,
+        systemPrompt,
+        prompt,
+        temperature,
         6000,
       );
-      if (reply) return reply;
+      if (content) return content;
     } else if (customKey.startsWith("gsk_")) {
-      const reply = await callOpenAiCompatible(
+      const content = await fetchOpenAiContent(
         "https://api.groq.com/openai/v1/chat/completions",
         { Authorization: `Bearer ${customKey}` },
         {
@@ -145,14 +208,14 @@ export async function narrateClientAi(state: GameState, req: NarrateRequest): Pr
             { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
           ],
-          temperature: 0.85,
+          temperature,
           response_format: { type: "json_object" },
         },
         6000,
       );
-      if (reply) return reply;
+      if (content) return content;
     } else {
-      const reply = await callOpenAiCompatible(
+      const content = await fetchOpenAiContent(
         "https://api.openai.com/v1/chat/completions",
         { Authorization: `Bearer ${customKey}` },
         {
@@ -161,40 +224,58 @@ export async function narrateClientAi(state: GameState, req: NarrateRequest): Pr
             { role: "system", content: systemPrompt },
             { role: "user", content: prompt },
           ],
-          temperature: 0.85,
+          temperature,
           response_format: { type: "json_object" },
         },
         6000,
       );
-      if (reply) return reply;
+      if (content) return content;
     }
   }
 
-  // 2. Built-in free browser AI (Pollinations OpenAI endpoint) with circuit breaker so it never lags the game
   if (Date.now() < freeEndpointBackoffUntil) {
     return null;
   }
 
-  const freeReply = await callOpenAiCompatible(
+  const freeContent = await fetchOpenAiContent(
     "https://text.pollinations.ai/openai/chat/completions",
     {},
     {
       model: "openai-fast",
       seed: Math.floor(Math.random() * 1_000_000),
-      temperature: 0.9,
+      temperature,
       response_format: { type: "json_object" },
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: prompt },
       ],
     },
-    3600,
+    freeTimeoutMs,
   );
 
-  if (!freeReply) {
-    // Back off for 45s if the public free endpoint is slow or unreachable so turns stay snappy
+  if (!freeContent) {
     freeEndpointBackoffUntil = Date.now() + 45_000;
   }
 
-  return freeReply;
+  return freeContent;
+}
+
+export async function narrateClientAi(
+  state: GameState,
+  req: NarrateRequest,
+): Promise<MasterReply | null> {
+  const { instructions, prompt } = buildMasterPrompt(state, req);
+  const systemPrompt = `${instructions}\n${JSON_FORMAT_INSTRUCTION}`;
+  const raw = await callConfiguredOrFreeClientAi(systemPrompt, prompt, 0.85, 3600);
+  return raw ? parseClientMasterJson(raw) : null;
+}
+
+export async function decideEnemiesClientAi(
+  state: GameState,
+  enemyIds: string[],
+): Promise<Record<string, EnemyDecision>> {
+  if (!enemyIds.length) return {};
+  const { instructions, prompt } = buildEnemyAiPrompt(state, enemyIds);
+  const raw = await callConfiguredOrFreeClientAi(instructions, prompt, 0.65, 1600);
+  return parseEnemyAiResponse(raw ?? "", state, enemyIds);
 }

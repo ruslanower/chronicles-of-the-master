@@ -30,9 +30,16 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
     a.preservesPitch = true;
     a.playbackRate = speed;
     audio.current = a;
-    a.onended = () => setTimeout(() => (last ? undefined : setI((x) => Math.min(x + 1, PROLOGUE.length - 1))), 300);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    a.onended = () => {
+      timer = setTimeout(
+        () => (last ? undefined : setI((x) => Math.min(x + 1, PROLOGUE.length - 1))),
+        300,
+      );
+    };
     void a.play().catch(() => undefined);
     return () => {
+      if (timer) clearTimeout(timer);
       a.pause();
       a.onended = null;
     };
@@ -96,7 +103,12 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
         >
           {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-gold" />}
         </Button>
-        <Button variant="pixelGhost" size="sm" className="h-9 text-[0.65rem] px-3 bg-ink/80 backdrop-blur-sm" onClick={onDone}>
+        <Button
+          variant="pixelGhost"
+          size="sm"
+          className="h-9 text-[0.65rem] px-3 bg-ink/80 backdrop-blur-sm"
+          onClick={onDone}
+        >
           {t("skip", lang)} ▶▶
         </Button>
       </div>
@@ -107,7 +119,10 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
           <div className="mb-3 md:mb-5 flex items-center justify-between gap-2">
             <div className="flex flex-1 gap-1.5">
               {PROLOGUE.map((_, k) => (
-                <span key={k} className={`h-1.5 flex-1 transition-colors ${k <= i ? "bg-gold" : "bg-secondary"}`} />
+                <span
+                  key={k}
+                  className={`h-1.5 flex-1 transition-colors ${k <= i ? "bg-gold" : "bg-secondary"}`}
+                />
               ))}
             </div>
             <span className="font-display text-[0.55rem] text-muted-foreground ml-2">
@@ -136,7 +151,11 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
                 </button>
               )}
             </div>
-            <Button variant="pixel" className="text-xs sm:text-sm px-5 py-2.5 h-auto" onClick={() => (last ? onDone() : setI(i + 1))}>
+            <Button
+              variant="pixel"
+              className="text-xs sm:text-sm px-5 py-2.5 h-auto"
+              onClick={() => (last ? onDone() : setI(i + 1))}
+            >
               {last ? t("begin", lang) : t("next", lang)} →
             </Button>
           </div>

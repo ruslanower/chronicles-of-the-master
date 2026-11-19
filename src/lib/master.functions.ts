@@ -5,7 +5,11 @@ import type { NarrateRequest } from "@/game/prompt";
 
 const req = z.union([
   z.object({ kind: z.literal("mechanic"), summary: z.string().max(2400) }),
-  z.object({ kind: z.literal("free"), text: z.string().max(600), d20: z.number().int().min(1).max(20) }),
+  z.object({
+    kind: z.literal("free"),
+    text: z.string().max(600),
+    d20: z.number().int().min(1).max(20),
+  }),
   z.object({ kind: z.literal("enemies"), summary: z.array(z.string().max(400)).max(12) }),
   z.object({ kind: z.literal("chat"), from: z.string().max(40), text: z.string().max(400) }),
 ]);
@@ -14,7 +18,7 @@ const req = z.union([
 export const masterNarrate = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => {
     const parsed = z.object({ state: z.record(z.string(), z.unknown()), req }).parse(d);
-    if (JSON.stringify(parsed.state).length > 120_000) throw new Error("state too large");
+    if (JSON.stringify(parsed.state).length > 350_000) throw new Error("state too large");
     return parsed as unknown as { state: GameState; req: NarrateRequest };
   })
   .handler(async ({ data }) => {
@@ -24,6 +28,31 @@ export const masterNarrate = createServerFn({ method: "POST" })
       return { ok: true as const, reply, fromAi };
     } catch (e) {
       console.error(e);
-      return { ok: false as const, error: masterErrorMessage(e, data.state.lang === "en" ? "en" : "uk") };
+      return {
+        ok: false as const,
+        error: masterErrorMessage(e, data.state.lang === "en" ? "en" : "uk"),
+      };
+    }
+  });
+
+/** Solo-mode AI enemy controller: asks the server AI to pick tactical enemy moves. */
+export const enemyAiDecide = createServerFn({ method: "POST" })
+  .inputValidator((d: unknown) => {
+    const parsed = z
+      .object({
+        state: z.record(z.string(), z.unknown()),
+        enemyIds: z.array(z.string().max(20)).max(8),
+      })
+      .parse(d);
+    if (JSON.stringify(parsed.state).length > 350_000) throw new Error("state too large");
+    return parsed as unknown as { state: GameState; enemyIds: string[] };
+  })
+  .handler(async ({ data }) => {
+    const { decideEnemiesServer, hasDedicatedServerAi } = await import("./master.server");
+    try {
+      const decisions = await decideEnemiesServer(data.state, data.enemyIds);
+      return { ok: true as const, decisions, hasDedicatedAi: hasDedicatedServerAi() };
+    } catch {
+      return { ok: false as const, decisions: {}, hasDedicatedAi: false };
     }
   });

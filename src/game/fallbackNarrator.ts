@@ -15,7 +15,11 @@ function pickDistinct<T>(arr: readonly T[], seed: number, lastMasterText: string
   const startIdx = Math.abs(seed) % arr.length;
   for (let offset = 0; offset < arr.length; offset++) {
     const candidate = arr[(startIdx + offset) % arr.length]!;
-    if (typeof candidate === "string" && lastMasterText && lastMasterText.includes(candidate.slice(0, 28))) {
+    if (
+      typeof candidate === "string" &&
+      lastMasterText &&
+      lastMasterText.includes(candidate.slice(0, 28))
+    ) {
       continue;
     }
     return candidate;
@@ -24,37 +28,107 @@ function pickDistinct<T>(arr: readonly T[], seed: number, lastMasterText: string
 }
 
 function extractMechanicDetails(summary: string, state: GameState) {
-  const heroPart = summary.split("\n---\n")[0] ?? summary;
-  const enemyPart = summary.split("\n---\n")[1] ?? "";
+  const parts = summary.split("\n---\n");
+  const heroPart = parts[0] ?? summary;
+  const enemyPart = parts[1] ?? "";
 
-  // Format from engine.ts:
-  // "${hero.name} → ${ab.name} (${foe.name}): D20 14+3=17 • -8 HP!"
-  // or "${hero.name} лікує ${ally.name} (+6 HP)."
-  // or "${hero.name} використовує ${item.name} → ${ally.name} (+8 HP)."
+  // Formats emitted by engine.ts:
+  // Attack/Stun: `${hero.name}: «${abName}» по/на ${enemy.name}. D20 ...` or `"${abName}" on ${enemy.name}. D20 ...`
+  // AOE: `${hero.name}: «${abName}» — шкода ${dmg} кожному ворогу (${targets}).`
+  // Heal: `${hero.name}: «${abName}» лікує ${ally.name} на ${amt} HP.`
+  // Hide: `${hero.name}: «${abName}» — ${ally.name} стає невидимим...`
+  // Shield: `${hero.name}: «${abName}» — загін отримує +3...`
+  // Item: `${hero.name} використовує «${item.name}»: ${ally.name} +${heal} HP.`
+  const abTargetUk = heroPart.match(/^(.+?):\s*«(.+?)»\s+(?:по|на)\s+([^.]+)\./);
+  const abTargetEn = heroPart.match(/^(.+?):\s*"(.+?)"\s+on\s+([^.]+)\./);
+  const healMatchUk = heroPart.match(/^(.+?):\s*«(.+?)»\s+лікує\s+(.+?)\s+на\s+(\d+)\s*HP/);
+  const healMatchEn = heroPart.match(/^(.+?):\s*"(.+?)"\s+heals\s+(.+?)\s+for\s+(\d+)\s*HP/);
+  const hideMatchUk = heroPart.match(/^(.+?):\s*«(.+?)»\s+—\s+(.+?)\s+стає невидимим/);
+  const hideMatchEn = heroPart.match(/^(.+?):\s*"(.+?)"\s+—\s+(.+?)\s+becomes invisible/);
+  const aoeMatchUk = heroPart.match(
+    /^(.+?):\s*«(.+?)»\s+—\s+шкода\s+(\d+)\s+кожному ворогу\s+\(([^)]+)\)/,
+  );
+  const aoeMatchEn = heroPart.match(
+    /^(.+?):\s*"(.+?)"\s+—\s+(\d+)\s+damage to every enemy\s+\(([^)]+)\)/,
+  );
+  const shieldMatchUk = heroPart.match(/^(.+?):\s*«(.+?)»\s+—\s+загін отримує/);
+  const shieldMatchEn = heroPart.match(/^(.+?):\s*"(.+?)"\s+—\s+the party gains/);
+  const itemMatchUk = heroPart.match(/^(.+?)\s+використовує\s+«(.+?)»:\s*(.+?)\s+\+(\d+)\s*HP/);
+  const itemMatchEn = heroPart.match(/^(.+?)\s+uses\s+"(.+?)":\s*(.+?)\s+\+(\d+)\s*HP/);
+
+  // Legacy arrow format fallback
   const arrowMatch = heroPart.match(/^([^→•:]+?)\s*→\s*([^(:•]+?)(?:\s*\(([^)]+)\))?\s*:/);
-  const healVerbMatch = heroPart.match(/^(.+?)\s+(?:лікує|heals)\s+([^(]+?)\s*\(\+(\d+)\s*HP\)/);
-  const itemUseMatch = heroPart.match(/^(.+?)\s+(?:використовує|uses)\s+([^→(]+?)(?:\s*→\s*([^(]+?))?\s*\(/);
 
   const actor = currentActor(state);
-  const fallbackHero = actor?.type === "hero" ? actor.hero.name : state.party[0]?.name ?? "Герой";
+  const fallbackHero = actor?.type === "hero" ? actor.hero.name : (state.party[0]?.name ?? "Герой");
   const aliveEnemies = state.enemies.filter((e) => e.hp > 0);
-  const fallbackEnemy = aliveEnemies[0]?.name ?? state.enemies[0]?.name ?? (state.lang === "en" ? "the enemy" : "ворога");
+  const fallbackEnemy =
+    aliveEnemies[0]?.name ??
+    state.enemies[0]?.name ??
+    (state.lang === "en" ? "the enemy" : "ворога");
 
   const heroName = (
+    abTargetUk?.[1] ??
+    abTargetEn?.[1] ??
+    healMatchUk?.[1] ??
+    healMatchEn?.[1] ??
+    hideMatchUk?.[1] ??
+    hideMatchEn?.[1] ??
+    aoeMatchUk?.[1] ??
+    aoeMatchEn?.[1] ??
+    shieldMatchUk?.[1] ??
+    shieldMatchEn?.[1] ??
+    itemMatchUk?.[1] ??
+    itemMatchEn?.[1] ??
     arrowMatch?.[1] ??
-    healVerbMatch?.[1] ??
-    itemUseMatch?.[1] ??
-    heroPart.split(/\s+/)[0] ??
     fallbackHero
   ).trim();
 
-  const abilityName = (arrowMatch?.[2] ?? itemUseMatch?.[2] ?? "").trim();
-  const targetName = (arrowMatch?.[3] ?? healVerbMatch?.[2] ?? itemUseMatch?.[3] ?? fallbackEnemy).trim();
+  const abilityName = (
+    abTargetUk?.[2] ??
+    abTargetEn?.[2] ??
+    healMatchUk?.[2] ??
+    healMatchEn?.[2] ??
+    hideMatchUk?.[2] ??
+    hideMatchEn?.[2] ??
+    aoeMatchUk?.[2] ??
+    aoeMatchEn?.[2] ??
+    shieldMatchUk?.[2] ??
+    shieldMatchEn?.[2] ??
+    itemMatchUk?.[2] ??
+    itemMatchEn?.[2] ??
+    arrowMatch?.[2] ??
+    ""
+  ).trim();
 
-  const dmgMatch = heroPart.match(/-(\d+)\s*HP/);
-  const healMatch = heroPart.match(/\+(\d+)\s*HP/);
+  const targetName = (
+    abTargetUk?.[3] ??
+    abTargetEn?.[3] ??
+    healMatchUk?.[3] ??
+    healMatchEn?.[3] ??
+    hideMatchUk?.[3] ??
+    hideMatchEn?.[3] ??
+    aoeMatchUk?.[4] ??
+    aoeMatchEn?.[4] ??
+    itemMatchUk?.[3] ??
+    itemMatchEn?.[3] ??
+    arrowMatch?.[3] ??
+    fallbackEnemy
+  ).trim();
+
+  const dmgMatch =
+    heroPart.match(/шкода\s+(\d+)/) ??
+    heroPart.match(/(\d+)\s+damage/) ??
+    heroPart.match(/-(\d+)\s*HP/);
+  const healAmtMatch =
+    healMatchUk?.[4] ??
+    healMatchEn?.[4] ??
+    itemMatchUk?.[4] ??
+    itemMatchEn?.[4] ??
+    heroPart.match(/\+(\d+)\s*HP/)?.[1];
+
   const dmg = dmgMatch ? Number(dmgMatch[1]) : 0;
-  const heal = healMatch ? Number(healMatch[1]) : 0;
+  const heal = healAmtMatch ? Number(healAmtMatch) : 0;
 
   return {
     heroPart,
@@ -84,7 +158,8 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
   const seed = hashText(rawKey) + state.log.length * 13 + state.round * 7 + state.pos * 5;
 
   if (req.kind === "mechanic") {
-    const { heroPart, enemyPart, heroName, abilityName, targetName, dmg, heal } = extractMechanicDetails(req.summary, state);
+    const { heroPart, enemyPart, heroName, abilityName, targetName, dmg, heal } =
+      extractMechanicDetails(req.summary, state);
     const isCrit = heroPart.includes("КРИТ") || heroPart.includes("CRIT");
     const isMiss = heroPart.includes("ПРОМАХ") || heroPart.includes("MISS");
     const isDefeated = heroPart.includes("ПЕРЕМОЖЕНИЙ") || heroPart.includes("DEFEATED");
@@ -93,11 +168,23 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
       heroPart.includes("heals") ||
       heroPart.includes("використовує") ||
       heroPart.includes("uses ");
-    const isStun = heroPart.includes("пропустить хід") || heroPart.includes("skip a turn");
+    const isStun =
+      heroPart.includes("пропустить хід") ||
+      heroPart.includes("skip a turn") ||
+      heroPart.includes("проти 12") ||
+      heroPart.includes("vs 12");
+    const stunOk = isStun && (heroPart.includes("УСПІХ") || heroPart.includes("SUCCESS"));
     const isHide = heroPart.includes("невидимим") || heroPart.includes("invisible");
-    const isShield = heroPart.includes("захисту на раунд") || heroPart.includes("defence for the round");
+    const isShield =
+      heroPart.includes("захисту на раунд") || heroPart.includes("defence for the round");
 
-    const moveLabel = abilityName ? (en ? `"${abilityName}"` : `«${abilityName}»`) : en ? "a swift strike" : "стрімкий випад";
+    const moveLabel = abilityName
+      ? en
+        ? `"${abilityName}"`
+        : `«${abilityName}»`
+      : en
+        ? "a swift strike"
+        : "стрімкий випад";
     const dmgLabel = dmg > 0 ? ` (-${dmg} HP)` : "";
     const healLabel = heal > 0 ? ` (+${heal} HP)` : "";
 
@@ -180,7 +267,7 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
         seed,
         lastMasterText,
       );
-    } else if (isStun) {
+    } else if (isStun && stunOk) {
       narration = pickDistinct(
         en
           ? [
@@ -192,6 +279,22 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
               `Блискучий тактичний маневр! ${heroName} приголомшує ціль (${targetName}) прийомом ${moveLabel}${dmgLabel} — ворог дезорієнтований і пропустить хід!`,
               `${heroName} б'є точно на випередження прийомом ${moveLabel}${dmgLabel}! ${targetName} оглушений і втрачає здатність атакувати у відповідь!`,
               `Майстерний контроль поля бою! Після прийому ${moveLabel}${dmgLabel} від ${heroName} супротивник (${targetName}) застигає в замішанні!`,
+            ],
+        seed,
+        lastMasterText,
+      );
+    } else if (isStun) {
+      narration = pickDistinct(
+        en
+          ? [
+              `${heroName} unleashes ${moveLabel} against ${targetName}, but the adversary shakes off the effect and holds their ground!`,
+              `A tense attempt! ${targetName} resists ${heroName}'s ${moveLabel} and refuses to yield their turn.`,
+              `${heroName} channels ${moveLabel} toward ${targetName}, yet the enemy's resolve proves too stubborn to stun.`,
+            ]
+          : [
+              `${heroName} спрямовує ${moveLabel} на супротивника (${targetName}), але ворог витримує натиск і не піддається оглушенню!`,
+              `Напружена мить! ${targetName} опирається дії прийому ${moveLabel} від ${heroName} та залишається в строю.`,
+              `${heroName} намагається вибити з колії ціль (${targetName}) прийомом ${moveLabel}, проте ворог встояв на ногах!`,
             ],
         seed,
         lastMasterText,
@@ -276,22 +379,32 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
       );
     }
 
-    // Enemy counterattack summary appended after "\n---\n"
+    // Enemy AI counter-turn summary appended after "\n---\n"
     if (enemyPart.trim()) {
       const enemyHit = enemyPart.includes("влучання") || enemyPart.includes("hit");
-      const enraged = enemyPart.includes("ЛЮТЬ") || enemyPart.includes("ENRAGE");
-      const counterDmgMatch = enemyPart.match(/-(\d+)\s*HP/);
+      const enemyShield = enemyPart.includes("+3 до захисту") || enemyPart.includes("+3 defence");
+      const enemyBlind =
+        enemyPart.includes("нікого не бачить") || enemyPart.includes("sees no one");
+      const enraged =
+        enemyPart.includes("люті") ||
+        enemyPart.includes("enraged") ||
+        enemyPart.includes("ЛЮТЬ") ||
+        enemyPart.includes("ENRAGE");
+      const counterDmgMatch =
+        enemyPart.match(/шкода\s+(\d+)/) ??
+        enemyPart.match(/(\d+)\s+damage/) ??
+        enemyPart.match(/-(\d+)\s*HP/);
       const counterDmg = counterDmgMatch ? ` (-${counterDmgMatch[1]} HP)` : "";
 
       if (enemyHit && enraged) {
         narration += pickDistinct(
           en
             ? [
-                ` Wounded and enraged, the enemy retaliates with a ferocious counter-strike${counterDmg}!`,
+                ` Wounded and enraged, the enemy AI retaliates with a ferocious counter-strike${counterDmg}!`,
                 ` Eyes blazing with fury, the cornered foe lashes back desperately${counterDmg}!`,
               ]
             : [
-                ` Поранений ворог впадає в лють і наносить шалений удар у відповідь${counterDmg}!`,
+                ` Поранений ворог впадає в лють і наносить шалений тактичний удар у відповідь${counterDmg}!`,
                 ` Очі супротивника спалахують люттю — у відчаї він контратакує з подвоєною силою${counterDmg}!`,
               ],
           seed + 3,
@@ -301,18 +414,36 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
         narration += pickDistinct(
           en
             ? [
-                ` In response, the enemies lunge forward with a sharp counterattack${counterDmg}, testing your line!`,
-                ` The adversaries immediately strike back from the shadows${counterDmg} — watch your party's health!`,
-                ` Before the dust settles, a retaliatory blow lands on your vanguard${counterDmg}!`,
+                ` In response, the enemies coordinate a sharp counterattack${counterDmg}, testing your line!`,
+                ` The adversaries immediately strike back at your weak spot${counterDmg} — watch your party's health!`,
+                ` Before the dust settles, a calculated retaliatory blow lands${counterDmg}!`,
               ]
             : [
-                ` У відповідь вороги миттєво переходять у контратаку${counterDmg}, випробовуючи вашу оборону!`,
-                ` Супротивники не баряться і завдають зустрічного удару${counterDmg} — бережіть здоров'я соратників!`,
+                ` У відповідь вороги миттєво проводять прицільну контратаку${counterDmg}, випробовуючи вашу оборону!`,
+                ` Супротивники шукають слабке місце й завдають зустрічного удару${counterDmg} — бережіть здоров'я соратників!`,
                 ` Щойно стихає брязкіт вашої атаки, ворожий клинок знаходить шпарину у відповідь${counterDmg}!`,
               ],
           seed + 5,
           lastMasterText,
         );
+      } else if (enemyShield) {
+        narration += pickDistinct(
+          en
+            ? [
+                " Sensing danger, the wounded enemy shifts into a defensive stance, raising their guard!",
+                " Calculating the odds, the adversary braces defensively (+3 defence) to weather your next assault!",
+              ]
+            : [
+                " Відчувши загрозу, ворог переходить у глуху оборону, підсилюючи свій захист (+3)!",
+                " Оцінивши ситуацію, супротивник ховається за захисною стійкою, готуючись відбити наступний натиск!",
+              ],
+          seed + 6,
+          lastMasterText,
+        );
+      } else if (enemyBlind) {
+        narration += en
+          ? " The foes sweep the shadows blindly, unable to spot your hidden heroes!"
+          : " Вороги розгублено нишпорять у тінях, але не можуть знайти прихованих героїв!";
       } else {
         narration += pickDistinct(
           en
@@ -356,6 +487,9 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
 
   if (req.kind === "enemies") {
     const hitCount = req.summary.filter((s) => s.includes("влучання") || s.includes("hit")).length;
+    const shieldOnly =
+      hitCount === 0 &&
+      req.summary.some((s) => s.includes("+3 до захисту") || s.includes("+3 defence"));
     const narration =
       hitCount > 0
         ? pickDistinct(
@@ -375,23 +509,37 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
             seed,
             lastMasterText,
           )
-        : pickDistinct(
-            en
-              ? [
-                  `The enemies lunge forward in ${loc} with heavy swings, but the heroes weave through every strike unharmed!`,
-                  `Steel whistles past your ears — every enemy attack misses its mark in the swirling shadows!`,
-                  `Your party anticipates the ambush! The foes strike only stone and empty air.`,
-                  `Impeccable footwork! Not a single enemy blow manages to pierce your heroes' defense this round.`,
-                ]
-              : [
-                  `Вороги кидаються в атаку посеред «${loc}», проте герої вправно ухиляються від кожного випаду!`,
-                  `Сталь свистить над головою — жоден удар супротивника не досягає цілі у тінях!`,
-                  `Загін діє на випередження: ворожі леза висікають лише іскри з холодного каменю!`,
-                  `Бездоганна реакція! Жодна ворожа атака в цьому раунді не змогла пробити ваш захист.`,
-                ],
-            seed,
-            lastMasterText,
-          );
+        : shieldOnly
+          ? pickDistinct(
+              en
+                ? [
+                    `The enemies in ${loc} lock shields and raise their guard (+3 defence), preparing to absorb your counterattack!`,
+                    `Sensing a tough fight ahead, the adversaries take defensive positions in ${loc}!`,
+                  ]
+                : [
+                    `Вороги у локації «${loc}» стають у глуху оборону (+3 до захисту), готуючись зустріти ваш наступ!`,
+                    `Оцінивши загрозу, супротивники зміцнюють свій захист і перекривають підступи!`,
+                  ],
+              seed,
+              lastMasterText,
+            )
+          : pickDistinct(
+              en
+                ? [
+                    `The enemies lunge forward in ${loc} with heavy swings, but the heroes weave through every strike unharmed!`,
+                    `Steel whistles past your ears — every enemy attack misses its mark in the swirling shadows!`,
+                    `Your party anticipates the ambush! The foes strike only stone and empty air.`,
+                    `Impeccable footwork! Not a single enemy blow manages to pierce your heroes' defense this round.`,
+                  ]
+                : [
+                    `Вороги кидаються в атаку посеред «${loc}», проте герої вправно ухиляються від кожного випаду!`,
+                    `Сталь свистить над головою — жоден удар супротивника не досягає цілі у тінях!`,
+                    `Загін діє на випередження: ворожі леза висікають лише іскри з холодного каменю!`,
+                    `Бездоганна реакція! Жодна ворожа атака в цьому раунді не змогла пробити ваш захист.`,
+                  ],
+              seed,
+              lastMasterText,
+            );
 
     return {
       narration,
@@ -400,55 +548,79 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
       actComplete: false,
       suggestions:
         act?.sandboxHints?.slice(0, 3) ??
-        (en ? ["Counterattack", "Heal ally", "Stun the threat"] : ["Контратакувати", "Зцілити союзника", "Оглушити ворога"]),
+        (en
+          ? ["Counterattack", "Heal ally", "Stun the threat"]
+          : ["Контратакувати", "Зцілити союзника", "Оглушити ворога"]),
     };
   }
 
   if (req.kind === "free") {
     const textLower = req.text.toLowerCase();
+    const actor = currentActor(state);
+    const activeHero = actor?.type === "hero" ? actor.hero : state.party[0];
+    const usedStoryItem =
+      activeHero?.inventory.some((it) => textLower.includes(it.name.toLowerCase())) ?? false;
     let stat: "str" | "agi" | "int" | "cha" = "str";
     let dc = 11;
 
     if (
       textLower.match(
-        /біг|стриб|ухил|тін|тих|схов|паркур|швидк|лаз|верх|крук|мотуз|прокра|перекат|dodge|jump|hide|shadow|sneak|dash|climb|rope|stealth/,
+        /біг|стриб|ухил|тін|тих|схов|паркур|швидк|лаз|верх|крук|мотуз|прокра|перекат|димов|відмич|гак|dodge|jump|hide|shadow|sneak|dash|climb|rope|stealth|smoke|hook|lockpick/,
       )
     ) {
       stat = "agi";
       dc = 11;
     } else if (
       textLower.match(
-        /магі|чар|заклят|руна|книг|думк|розди|знайт|знан|зілл|отрут|алхім|трав|оглян|дослід|пастк|механізм|magic|spell|rune|inspect|scroll|potion|herb|search|trap/,
+        /магі|чар|заклят|руна|книг|думк|розди|знайт|знан|зілл|отрут|алхім|трав|оглян|дослід|пастк|механізм|витяж|попіл|компас|сувій|ліхтар|magic|spell|rune|inspect|scroll|potion|herb|search|trap|vent|ash|compass/,
       )
     ) {
       stat = "int";
       dc = 11;
     } else if (
       textLower.match(
-        /крик|слово|домов|обман|збрех|перекон|відвол|голос|пісн|жарт|коро|принц|кухар|конюх|тарган|заляк|наказ|підкуп|shout|talk|deceive|persuade|distract|sing|king|chef|intimidate/,
+        /крик|слово|домов|обман|збрех|перекон|відвол|голос|пісн|жарт|коро|принц|кухар|конюх|тарган|заляк|наказ|підкуп|маск|лютн|печатка|овес|shout|talk|deceive|persuade|distract|sing|king|chef|intimidate|mask|lute|seal|oats/,
       )
     ) {
       stat = "cha";
       dc = 11;
+    } else if (usedStoryItem && activeHero) {
+      // Pick the hero's strongest stat when improvising with one of their signature items
+      const entries = Object.entries(activeHero.stats) as ["str" | "agi" | "int" | "cha", number][];
+      stat = entries.sort((a, b) => b[1] - a[1])[0]?.[0] ?? "str";
+      dc = 10;
     } else {
       stat = "str";
       dc = 12;
     }
 
-    const actor = currentActor(state);
-    const heroName = actor?.type === "hero" ? actor.hero.name : state.party[0]?.name ?? (en ? "Hero" : "Герой");
-    const bonus = actor?.type === "hero" ? (actor.hero.stats[stat] ?? 0) : 0;
+    if (usedStoryItem) {
+      dc = Math.max(8, dc - 2);
+    }
+
+    const heroName = activeHero?.name ?? (en ? "Hero" : "Герой");
+    const bonus = activeHero ? (activeHero.stats[stat] ?? 0) : 0;
     const total = req.d20 + bonus;
     const ok = req.d20 === 20 || (req.d20 !== 1 && total >= dc);
     const isNonCombatAct = state.enemies.length === 0;
+    const isTacticalNonLethal =
+      !isNonCombatAct &&
+      (usedStoryItem ||
+        Boolean(
+          textLower.match(
+            /димов|лютн|маск|сонн|медов|тарган|говор|перекон|обман|домов|відвол|схов|втеч|чорний хід|двер|брам|витяжк|колб|попіл|люк|каналіз|дах|блоку|клин|ланцюг|приспи|приспа|мир|прослиз|smoke|lute|mask|sleep|honey|roach|talk|persuade|distract|sneak|hide|escape|door|gate|vent|flask|ash|manhole|sewer|roof|block|chain|bribe|peace|slip/,
+          ),
+        )) &&
+      !textLower.match(/атаку|удар|руба|б'ю|січу|стріля|attack|strike|slash|stab|shoot/);
     const nextProgress = (state.actProgress ?? 0) + (ok ? 1 : 0);
-    const actComplete = isNonCombatAct && nextProgress >= ACT_PROGRESS_GOAL;
+    const actComplete =
+      (isNonCombatAct || isTacticalNonLethal) && nextProgress >= ACT_PROGRESS_GOAL;
 
     let narration = "";
     const hpChanges: { target: string; delta: number }[] = [];
 
     if (ok) {
-      if (isNonCombatAct) {
+      if (isNonCombatAct || isTacticalNonLethal) {
         if (actComplete) {
           narration = pickDistinct(
             en
@@ -470,8 +642,8 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
             en
               ? [
                   `Clever move! ${heroName} succeeds at "${req.text}" in ${loc} (${nextProgress}/${ACT_PROGRESS_GOAL} toward the goal). The atmosphere shifts in your favor!`,
-                  `Impressive ingenuity! ${heroName}'s action — "${req.text}" — yields tangible progress (${nextProgress}/${ACT_PROGRESS_GOAL}). One more bold step will seal the objective!`,
-                  `Fate smiles on ${heroName}! "${req.text}" works smoothly beneath the lights of ${loc} (progress: ${nextProgress}/${ACT_PROGRESS_GOAL}). Keep pressing your plan!`,
+                  `Impressive ingenuity! ${heroName}'s action — "${req.text}" — yields tangible progress (${nextProgress}/${ACT_PROGRESS_GOAL}). Keep pressing your plan!`,
+                  `Fate smiles on ${heroName}! "${req.text}" works smoothly beneath the lights of ${loc} (progress: ${nextProgress}/${ACT_PROGRESS_GOAL}).`,
                   `Sharp instincts! ${heroName} executes "${req.text}" with finesse (${nextProgress}/${ACT_PROGRESS_GOAL}), bringing the party closer to success in ${loc}!`,
                 ]
               : [
@@ -552,20 +724,28 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
   let narration = "";
   const hpChanges: { target: string; delta: number }[] = [];
 
-  if (q.match(/привіт|вітаю|алло|хто ти|ти ші|штучний|живий|тут\?|hello|hi\b|who are you|are you ai/)) {
+  if (
+    q.match(/привіт|вітаю|алло|хто ти|ти ші|штучний|живий|тут\?|hello|hi\b|who are you|are you ai/)
+  ) {
     narration = en
       ? `The Game Master smiles from behind the screen: "Greetings, ${req.from}! I am watching every roll of the D20 in ${loc}. Right now it is ${activeHero?.name ?? "your hero"}'s move, and your goal is: ${act?.objective ?? "prevail"}."`
       : `Майстер усміхається з-за ширми хронік: «Вітаю, ${req.from}! Я уважно стежу за кожним кроком загону у локації "${loc}". Зараз хід тримає ${activeHero?.name ?? "ваш герой"}, а головна мета — ${act?.objective ?? "вистояти й перемогти"}!»`;
-  } else if (q.match(/ворог|супротивник|хто проти|скільки хп|слабк|бос|страж|охорон|enemy|enemies|boss|weakness|guard/)) {
+  } else if (
+    q.match(
+      /ворог|супротивник|хто проти|скільки хп|слабк|бос|страж|охорон|enemy|enemies|boss|weakness|guard/,
+    )
+  ) {
     if (aliveEnemies.length > 0) {
-      const enemyStatus = aliveEnemies.map((e) => `${e.name} (${e.hp}/${e.maxHp} HP, AC ${e.ac})`).join(", ");
+      const enemyStatus = aliveEnemies
+        .map((e) => `${e.name} (${e.hp}/${e.maxHp} HP, AC ${e.ac})`)
+        .join(", ");
       narration = en
         ? `The Master taps the tactical map of ${loc}: "Facing you right now: ${enemyStatus}. Focus your party's attacks on one target at a time, or use control abilities to stun the strongest threat!"`
         : `Майстер вказує на фігурки посеред «${loc}»: «Перед вами зараз: ${enemyStatus}. Раджу сфокусувати вогонь на одній цілі або приголомшити найнебезпечнішого ворога здібністю контролю!»`;
     } else {
       narration = en
         ? `The Master glances around ${loc}: "There are no active combat foes in sight right now (${state.actProgress ?? 0}/${ACT_PROGRESS_GOAL} scene progress). Use free actions in the 'Own action' tab to complete the objective: ${act?.objective ?? ""}!"`
-        : `Майстер оглядає «${loc}»: «Прямих ворогів у бою зараз немає (прогрес сцени: ${state.actProgress ?? 0}/${ACT_PROGRESS_GOAL}). Перейдіть на вкладку "Власний хід" і опишіть хитрий маневр, щоб виконати мету: ${act?.objective ?? ""}!»`;
+        : `Майстер оглядає «${loc}»: «Прямих ворогів у бою зараз немає (прогрес сцени: ${state.actProgress ?? 0}/${ACT_PROGRESS_GOAL}). Перейдіть на вкладку "Своя дія" і опишіть хитрий маневр, щоб виконати мету: ${act?.objective ?? ""}!»`;
     }
   } else if (q.match(/лікув|здоров|хп|hp|поранен|вмира|зілл|heal|health|potion|dying|hurt/)) {
     if (woundedHero && woundedHero.hp < woundedHero.maxHp) {
@@ -577,18 +757,26 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
         ? `The Master checks the party sheets: "Your heroes are in great shape right now! Save your healing potions for tighter moments and press the offensive in ${loc}."`
         : `Майстер звіряє листи персонажів: «Усі герої зараз у чудовій формі! Прибережіть цілющі зілля для важчої хвилини й сміливо розвивайте наступ у "${loc}".»`;
     }
-  } else if (q.match(/допомож|благослов|дай хп|підлікуй|дар|прошу|благаю|please|bless|help us|gift/)) {
+  } else if (
+    q.match(/допомож|благослов|дай хп|підлікуй|дар|прошу|благаю|please|bless|help us|gift/)
+  ) {
     if (woundedHero) {
       hpChanges.push({ target: woundedHero.name, delta: 2 });
     }
     narration = en
       ? `Moved by ${req.from}'s plea, the Master flicks a golden token across the table: "A spark of astral grace touches ${woundedHero?.name ?? "your party"} (+2 HP)! Now show me a worthy move in ${loc}!"`
       : `Почувши звернення ${req.from}, Майстер підкидає золоту монету долі: «Нехай іскра астральної благодаті підтримає ${woundedHero?.name ?? "ваш загін"} (+2 HP)! А тепер покажіть красивий хід у "${loc}"!»`;
-  } else if (q.match(/що робити|куди|як пройти|підказк|план|мета|завдан|hint|what to do|where|goal|objective|how to/)) {
+  } else if (
+    q.match(
+      /що робити|куди|як пройти|підказк|план|мета|завдан|hint|what to do|where|goal|objective|how to/,
+    )
+  ) {
     narration = en
       ? `The Master leans over the chronicle of ${loc}: "${req.from}, your current objective is: ${act?.objective ?? "advance the story"}. ${pickedHint ? `Try an action like "${pickedHint}"` : "Combine your heroes' abilities"} — or improvise via 'Own action'!"`
-      : `Майстер розгортає сувій «${loc}»: «${req.from}, ваше ключове завдання зараз: ${act?.objective ?? "просуватися вперед"}. ${pickedHint ? `Спробуйте, наприклад, ідею: «${pickedHint}»` : "Поєднайте сильні сторони героїв"} — або опишіть свій маневр у вкладці "Власний хід"!»`;
-  } else if (q.match(/король|тінь|отрут|зрад|сюжет|історі|лор|хронік|king|shadow|poison|story|lore/)) {
+      : `Майстер розгортає сувій «${loc}»: «${req.from}, ваше ключове завдання зараз: ${act?.objective ?? "просуватися вперед"}. ${pickedHint ? `Спробуйте, наприклад, ідею: «${pickedHint}»` : "Поєднайте сильні сторони героїв"} — або опишіть свій маневр у вкладці "Своя дія"!»`;
+  } else if (
+    q.match(/король|тінь|отрут|зрад|сюжет|історі|лор|хронік|king|shadow|poison|story|lore/)
+  ) {
     narration = en
       ? `The Master's voice drops to a dramatic whisper: "Since the night of the poisoned banquet, the usurper's shadow guards patrol every corridor. What you do here in ${loc} will decide whether the rightful crown is avenged!"`
       : `Голос Майстра стає урочисто-тихим: «Від тієї ночі, коли на бенкеті отруїли короля, тіньова сторожа узурпатора чатує на кожному кроці. Ваші дії тут, у "${loc}", визначать долю всього королівства!»`;
@@ -603,7 +791,7 @@ export function generateFallbackMasterReply(state: GameState, req: NarrateReques
         : [
             `Майстер уважно вислуховує ${req.from} («${req.text}») і вказує на «${loc}»: «Цікавий задум! Втілюйте його просто зараз під час ходу героя ${activeHero?.name ?? ""}${pickedHint ? `, або спробуйте «${pickedHint}»` : ""}!»`,
             `Примружившись у світлі ліхтаря, Майстер відповідає ${req.from}: «У стінах "${loc}" сміливі слова важать чимало. Пам'ятайте про головну ціль: ${act?.objective ?? "перемога"} — і нехай D20 буде прихильним!»`,
-            `Майстер перекочує гранчастий кубик D20 по карті: «Прийнято, ${req.from}! Якщо хочете перетворити "${req.text}" на дію в сцені — впишіть це у вкладці "Власний хід" для героя ${activeHero?.name ?? ""}!»`,
+            `Майстер перекочує гранчастий кубик D20 по карті: «Прийнято, ${req.from}! Якщо хочете перетворити "${req.text}" на дію в сцені — впишіть це у вкладці "Своя дія" для героя ${activeHero?.name ?? ""}!»`,
           ],
       seed,
       lastMasterText,

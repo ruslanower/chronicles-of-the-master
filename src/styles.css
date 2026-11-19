@@ -299,7 +299,7 @@
 .dice-face { background: var(--secondary); clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%); }
 
 @media (max-width: 767px) {
-  .game-scene { height: 250px; min-height: 230px; }
+  .game-scene { aspect-ratio: 4 / 3; height: auto; min-height: 245px; max-height: 360px; }
   .scene-unit { margin: 0 1px; }
   .scene-hero { height: clamp(68px, 18vw, 105px); width: auto; max-width: min(52px, 12vw); }
   .scene-enemy { height: clamp(68px, 18vw, 102px); width: auto; max-width: min(56px, 13.5vw); }

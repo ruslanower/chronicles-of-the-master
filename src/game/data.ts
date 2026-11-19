@@ -1,7 +1,15 @@
 import raw from "./campaign.json";
 
 export type Stats = { str: number; agi: number; int: number; cha: number };
-export type Item = { id: string; name: string; bonus?: string; lore?: string; artKey?: string; qty?: number; equipped?: boolean };
+export type Item = {
+  id: string;
+  name: string;
+  bonus?: string;
+  lore?: string;
+  artKey?: string;
+  qty?: number;
+  equipped?: boolean;
+};
 export type HeroDef = {
   id: string;
   classKey: string;
@@ -34,7 +42,12 @@ export const campaign = raw as unknown as {
   heroes: HeroDef[];
 };
 
-export const STAT_LABEL: Record<keyof Stats, string> = { str: "СИЛ", agi: "СПР", int: "РОЗ", cha: "ХАР" };
+export const STAT_LABEL: Record<keyof Stats, string> = {
+  str: "СИЛ",
+  agi: "СПР",
+  int: "РОЗ",
+  cha: "ХАР",
+};
 
 const LOC: Record<string, string> = {
   scene_tavern_cellar: "loc_01_secret_tavern.webp",
@@ -46,7 +59,20 @@ const LOC: Record<string, string> = {
   scene_castle_kitchen_hood: "loc_11_castle_kitchen_hood.webp",
   scene_castle_plaza_evac: "loc_12_castle_plaza_evac.webp",
 };
-export const locationSrc = (bg: string) => `/game/locations/${LOC[bg] ?? LOC["scene_tavern_cellar"]}`;
+const LOC_MOBILE: Record<string, string> = {
+  scene_tavern_cellar: "loc_01_secret_tavern_mobile.jpg",
+  scene_alley_manhole: "loc_02_alley_manhole_mobile.jpg",
+  scene_sewer_outpost: "loc_05_sewer_outpost_mobile.jpg",
+  scene_cockroach_pit: "loc_06_cockroach_pit_mobile.jpg",
+  scene_stablemaster_yard: "loc_07_stablemaster_yard_mobile.jpg",
+  scene_castle_feast: "loc_09_castle_feast_mobile.jpg",
+  scene_castle_kitchen_hood: "loc_11_castle_kitchen_hood_mobile.jpg",
+  scene_castle_plaza_evac: "loc_12_castle_plaza_evac_mobile.jpg",
+};
+export const locationSrc = (bg: string) =>
+  `/game/locations/${LOC[bg] ?? LOC["scene_tavern_cellar"]}`;
+export const locationMobileSrc = (bg: string) =>
+  `/game/locations/${LOC_MOBILE[bg] ?? LOC_MOBILE["scene_tavern_cellar"]}`;
 
 /** sprite per act entity (index-aligned with rightEntities); null = no sprite */
 const ACT_SPRITES: Record<number, (string | null)[]> = {
@@ -66,7 +92,8 @@ export const entitySprite = (act: number, i: number) => {
 
 export const heroSprite = (classKey: string, pose: "idle" | "action" | "front" = "idle") =>
   `/game/heroes/${classKey}_${pose}.png`;
-export const itemSrc = (artKey?: string) => (artKey ? `/game/items/${artKey}.png` : "/game/items/item_potion_red.png");
+export const itemSrc = (artKey?: string) =>
+  artKey ? `/game/items/${artKey}.png` : "/game/items/item_potion_red.png";
 
 /** Rain / ember / spores particles per scene mood */
 export const sceneMood = (bg: string): "rain" | "embers" | "spores" | "none" =>
