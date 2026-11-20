@@ -80,18 +80,29 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "theme-color", content: "#15112a" },
       { title: "Хроніки Майстра — Корона Чорної Зірки" },
-      { name: "description", content: "Темне фентезі, живий Майстер і загін повстанців. Корона Чорної Зірки чекає на вашу історію." },
+      {
+        name: "description",
+        content:
+          "Темне фентезі, живий Майстер і загін повстанців. Корона Чорної Зірки чекає на вашу історію.",
+      },
       { property: "og:title", content: "Хроніки Майстра" },
-      { property: "og:description", content: "Повстаньте проти узурпатора у світі Корони Чорної Зірки." },
+      {
+        property: "og:description",
+        content: "Повстаньте проти узурпатора у світі Корони Чорної Зірки.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&family=Ubuntu:wght@400;500;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Pixelify+Sans:wght@400;500;600;700&family=Ubuntu:wght@400;500;700&display=swap",
+      },
       { rel: "stylesheet", href: appCss },
-      { rel: "icon", type: "image/png", href: "/favicon.png" },
+      { rel: "icon", type: "image/png", href: "/favicon.png?v=2" },
+      { rel: "apple-touch-icon", href: "/game/logo_crest.png" },
     ],
   }),
   shellComponent: RootShell,

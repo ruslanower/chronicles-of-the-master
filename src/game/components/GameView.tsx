@@ -124,6 +124,13 @@ export function GameView(p: Props) {
           <Button variant="ghost" size="icon" aria-label={t("mainMenu", lang)} onClick={p.onExit}>
             <ArrowLeft />
           </Button>
+          <img
+            src="/game/logo_crest.png"
+            alt=""
+            width={64}
+            height={64}
+            className="pixel h-8 w-8 sm:h-9 sm:w-9 rounded-xs border border-gold/60 object-cover shadow-[0_0_10px_color-mix(in_oklab,var(--gold)_35%,transparent)]"
+          />
           <div>
             <p className="font-display text-[0.55rem] text-gold">
               {t("gameTitle", lang).toUpperCase()}

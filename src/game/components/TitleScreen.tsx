@@ -80,8 +80,17 @@ export function TitleScreen({
         ))}
       </div>
 
-      <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-4 py-10 text-center">
-        <p className="mb-3 md:mb-6 font-display text-[0.55rem] text-parchment/80 md:text-xs">
+      <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-4 py-8 text-center">
+        <div className="mb-3 md:mb-4 flex flex-col items-center">
+          <img
+            src="/game/logo_astral_compass.jpg"
+            alt={t("gameTitle", lang)}
+            width={220}
+            height={220}
+            className="pixel h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 rounded-full border-2 border-gold/80 object-cover shadow-[0_0_28px_color-mix(in_oklab,var(--gold)_45%,var(--astral))]"
+          />
+        </div>
+        <p className="mb-2 md:mb-3 font-display text-[0.55rem] text-parchment/80 md:text-xs">
           {t("chapter", lang)}
         </p>
         <h1 className="title-glow text-2xl sm:text-3xl md:text-5xl leading-tight md:leading-[1.4]">
