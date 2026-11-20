@@ -144,6 +144,7 @@ async function runRoomOp(
   data: { code: string; playerId: string; token: string },
   op: Op,
   act?: z.infer<typeof action>,
+  choiceId?: string,
 ) {
   const { verifyPlayer, claimRoom, saveRoom } = await import("./rooms.server");
   const engine = await import("@/game/engine");
@@ -194,7 +195,7 @@ async function runRoomOp(
       );
     } else if (op === "nextAct") {
       next = await playOpeningEnemies(
-        engine.advanceAct(state),
+        engine.advanceAct(state, Math.random, Date.now(), choiceId),
         narrateServer,
         Math.random,
         Date.now(),
@@ -230,8 +231,10 @@ export const roomTick = createServerFn({ method: "POST" })
   .handler(({ data }) => runRoomOp(data, "tick"));
 
 export const roomNextAct = createServerFn({ method: "POST" })
-  .inputValidator((d: unknown) => z.object(creds).parse(d))
-  .handler(({ data }) => runRoomOp(data, "nextAct"));
+  .inputValidator((d: unknown) =>
+    z.object({ ...creds, choiceId: z.string().max(40).optional() }).parse(d),
+  )
+  .handler(({ data }) => runRoomOp(data, "nextAct", undefined, data.choiceId));
 
 export const roomRetry = createServerFn({ method: "POST" })
   .inputValidator((d: unknown) => z.object(creds).parse(d))

@@ -356,7 +356,7 @@ export function OnlineRoom({ code }: { code: string }) {
             void loadChat();
           });
       }}
-      onNextAct={() => c && void call(() => fNext({ data: c }))}
+      onNextAct={(choiceId) => c && void call(() => fNext({ data: { ...c, choiceId } }))}
       onRetry={() => c && void call(() => fRetry({ data: c }))}
       onExit={() => {
         window.location.href = "/";

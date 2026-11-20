@@ -273,10 +273,10 @@ export function SoloGame({
         )
       }
       onChat={(text, toMaster) => void sendChat(text, toMaster)}
-      onNextAct={() =>
+      onNextAct={(choiceId) =>
         void run(() =>
           playOpeningEnemies(
-            advanceAct(latestStateRef.current),
+            advanceAct(latestStateRef.current, Math.random, Date.now(), choiceId),
             narrate,
             Math.random,
             Date.now(),

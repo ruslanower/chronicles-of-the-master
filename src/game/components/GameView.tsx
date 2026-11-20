@@ -4,11 +4,13 @@ import {
   BookOpen,
   Crown,
   LoaderCircle,
+  MessageCircle,
   RotateCcw,
+  Shield,
   Sparkles,
+  Swords,
   Target,
   Timer,
-  MessageCircle,
   Volume2,
   VolumeX,
 } from "lucide-react";
@@ -32,7 +34,9 @@ import {
   setMusicMood,
   subscribeAudioSettings,
 } from "../sound";
+import { getInterludeForAct } from "../interludes";
 import type { HeroAction } from "../turn";
+import { ActTransition } from "./ActTransition";
 import { Scene } from "./Scene";
 import { TurnPanel } from "./TurnPanel";
 import { ChatPanel, type ChatMsg } from "./ChatPanel";
@@ -50,7 +54,7 @@ type Props = {
   timed?: boolean;
   onAction: (heroId: string, a: HeroAction) => void;
   onChat: (text: string, toMaster: boolean) => void;
-  onNextAct: () => void;
+  onNextAct: (choiceId?: string) => void;
   onRetry: () => void;
   onExit: () => void;
   onTimeout?: () => void;
@@ -72,6 +76,8 @@ export function GameView(p: Props) {
   const [journal, setJournal] = useState(false);
   const [aiModal, setAiModal] = useState(false);
   const [soundModal, setSoundModal] = useState(false);
+  const [transitionOpen, setTransitionOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<"turn" | "party" | "chat">("turn");
   const [aiKeyInput, setAiKeyInput] = useState(() => getStoredAiKey());
   const [muted, setMuted] = useState(() => getAudioSettings().muted);
   const act = campaignFor(lang).acts[state.actIndex];
@@ -88,6 +94,12 @@ export function GameView(p: Props) {
   useEffect(() => {
     return subscribeAudioSettings((s) => setMuted(s.muted));
   }, []);
+
+  useEffect(() => {
+    if (!state.actReady) {
+      setTransitionOpen(false);
+    }
+  }, [state.actReady, state.actIndex]);
 
   // Adaptive background music mood per act and combat state
   useEffect(() => {
@@ -148,8 +160,8 @@ export function GameView(p: Props) {
   if (!act) return null;
 
   return (
-    <main className="min-h-dvh bg-background lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">
-      <header className="shrink-0 flex items-center justify-between gap-3 border-b border-border px-3 py-1.5 md:px-6 md:py-2">
+    <main className="flex h-dvh flex-col overflow-hidden bg-background">
+      <header className="shrink-0 flex items-center justify-between gap-2 border-b border-border px-2.5 py-1.5 md:px-6 md:py-2">
         <div className="flex items-center gap-2.5">
           <Button variant="ghost" size="icon" aria-label={t("mainMenu", lang)} onClick={p.onExit}>
             <ArrowLeft />
@@ -202,7 +214,10 @@ export function GameView(p: Props) {
             size="icon"
             className="lg:hidden"
             aria-label={t("chat", lang)}
-            onClick={() => document.getElementById("chat")?.scrollIntoView({ behavior: "smooth" })}
+            onClick={() => {
+              playClickSound();
+              setMobileTab("chat");
+            }}
           >
             <MessageCircle />
           </Button>
@@ -217,17 +232,17 @@ export function GameView(p: Props) {
         </div>
       </header>
 
-      <div className="mx-auto w-full max-w-[1600px] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col">
         <div className="shrink-0">
           <Scene state={state} lang={lang} busy={p.busy} />
         </div>
 
         {state.order.length > 1 && (
           <div
-            className="shrink-0 flex items-center gap-2 overflow-x-auto border-y border-border bg-ink px-3 py-1.5 md:px-6"
+            className="shrink-0 flex items-center gap-1.5 overflow-x-auto border-y border-border bg-ink px-2.5 py-1 md:px-6 md:py-1.5"
             aria-label={t("initiative", lang)}
           >
-            <span className="shrink-0 font-display text-[0.5rem] text-muted-foreground">
+            <span className="shrink-0 font-display text-[0.45rem] sm:text-[0.5rem] text-muted-foreground">
               {t("initiative", lang).toUpperCase()}
             </span>
             {state.order.map((id, i) => {
@@ -238,14 +253,14 @@ export function GameView(p: Props) {
               return (
                 <div
                   key={id}
-                  className={`flex shrink-0 items-center gap-1 border px-2 py-0.5 text-xs ${cur ? "border-gold text-gold" : "border-border text-muted-foreground"} ${hp <= 0 ? "opacity-30 line-through" : ""}`}
+                  className={`flex shrink-0 items-center gap-1 border px-1.5 py-0.5 text-[0.68rem] sm:text-xs ${cur ? "border-gold text-gold" : "border-border text-muted-foreground"} ${hp <= 0 ? "opacity-30 line-through" : ""}`}
                 >
                   <img
                     src={h ? heroSprite(h.classKey, "front") : e?.sprite}
                     alt=""
                     width={240}
                     height={280}
-                    className="pixel h-5 w-4 object-contain"
+                    className="pixel h-4 w-3.5 sm:h-5 sm:w-4 object-contain"
                   />
                   <span className={e ? "text-hp" : ""}>
                     {(h?.name ?? e?.name ?? "").split(" ")[0]}
@@ -256,28 +271,76 @@ export function GameView(p: Props) {
           </div>
         )}
 
-        <div className="grid gap-3 p-2.5 md:p-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_340px]">
-          <div className="min-w-0 flex flex-col gap-2.5 lg:min-h-0">
-            <section aria-label={t("story", lang)} className="flex flex-col lg:min-h-0 lg:flex-1">
-              <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 border border-border bg-ink/60 px-3 py-1.5 text-xs sm:text-sm text-muted-foreground">
-                <div className="flex items-center gap-2 min-w-0">
+        {/* Mobile single-screen switcher tabs */}
+        <div
+          className="shrink-0 grid grid-cols-3 border-b border-border bg-ink/95 lg:hidden"
+          role="tablist"
+        >
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileTab === "turn"}
+            onClick={() => {
+              playClickSound();
+              setMobileTab("turn");
+            }}
+            className={`flex items-center justify-center gap-1.5 py-1.5 font-display text-[0.5rem] transition-colors ${mobileTab === "turn" ? "border-b-2 border-gold bg-gold/10 text-gold" : "text-muted-foreground"}`}
+          >
+            <Swords className="h-3.5 w-3.5" />
+            {lang === "en" ? "ACTION" : "ХІД / ПОДІЇ"}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileTab === "party"}
+            onClick={() => {
+              playClickSound();
+              setMobileTab("party");
+            }}
+            className={`flex items-center justify-center gap-1.5 py-1.5 font-display text-[0.5rem] transition-colors ${mobileTab === "party" ? "border-b-2 border-gold bg-gold/10 text-gold" : "text-muted-foreground"}`}
+          >
+            <Shield className="h-3.5 w-3.5" />
+            {t("party", lang).toUpperCase()}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={mobileTab === "chat"}
+            onClick={() => {
+              playClickSound();
+              setMobileTab("chat");
+            }}
+            className={`flex items-center justify-center gap-1.5 py-1.5 font-display text-[0.5rem] transition-colors ${mobileTab === "chat" ? "border-b-2 border-gold bg-gold/10 text-gold" : "text-muted-foreground"}`}
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+            {t("chat", lang).toUpperCase()}
+          </button>
+        </div>
+
+        <div className="min-h-0 flex-1 p-2 sm:p-2.5 md:p-3 lg:grid lg:grid-cols-[1fr_340px] lg:gap-3">
+          <div
+            className={`${mobileTab === "turn" ? "flex" : "hidden"} h-full min-h-0 min-w-0 flex-col gap-2 lg:flex`}
+          >
+            <section aria-label={t("story", lang)} className="flex min-h-0 flex-1 flex-col">
+              <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 border border-border bg-ink/60 px-2.5 py-1 text-xs sm:text-sm text-muted-foreground">
+                <div className="flex items-center gap-1.5 min-w-0">
                   <Target className="h-3.5 w-3.5 shrink-0 text-gold" />
                   <span className="truncate">
                     <span className="text-gold">{t("actGoal", lang)}:</span> {act.objective}
                   </span>
                 </div>
                 {(!state.enemies.length || (state.actProgress ?? 0) > 0) && (
-                  <div className="flex items-center gap-1.5 shrink-0">
+                  <div className="flex items-center gap-1 shrink-0">
                     {Array.from({ length: ACT_PROGRESS_GOAL }, (_, idx) => (
                       <span
                         key={idx}
-                        className={`h-2 w-5 rounded-xs border border-gold/50 ${idx < (state.actProgress ?? 0) ? "bg-gold" : "bg-ink"}`}
+                        className={`h-2 w-4 sm:w-5 rounded-xs border border-gold/50 ${idx < (state.actProgress ?? 0) ? "bg-gold" : "bg-ink"}`}
                       />
                     ))}
                   </div>
                 )}
               </div>
-              <div className="mt-1.5 shrink-0 flex gap-1">
+              <div className="mt-1 shrink-0 flex gap-1">
                 {campaignFor(lang).acts.map((a, i) => (
                   <span
                     key={a.actNumber}
@@ -285,18 +348,18 @@ export function GameView(p: Props) {
                   />
                 ))}
               </div>
-              <div className="mt-2 shrink-0 flex items-center justify-between">
-                <h2 className="font-display text-[0.55rem] text-gold">
+              <div className="mt-1.5 shrink-0 flex items-center justify-between">
+                <h2 className="font-display text-[0.5rem] sm:text-[0.55rem] text-gold">
                   {t("masterTells", lang)} •{" "}
-                  {lang === "en" ? "CHRONICLE OF ACTIONS" : "ІСТОРІЯ ДІЙ ТА СЛІВ МАЙСТРА"}
+                  {lang === "en" ? "CHRONICLE" : "ІСТОРІЯ ДІЙ ТА СЛІВ МАЙСТРА"}
                 </h2>
-                <span className="font-display text-[0.48rem] text-muted-foreground">
-                  {state.log.length} {lang === "en" ? "entries" : "записів"}
+                <span className="font-display text-[0.45rem] sm:text-[0.48rem] text-muted-foreground">
+                  {state.log.length}
                 </span>
               </div>
 
               <div
-                className="mt-1.5 max-h-60 space-y-2 overflow-y-auto rounded-xs border border-border bg-ink/55 p-2.5 md:p-3 lg:min-h-0 lg:max-h-none lg:flex-1"
+                className="mt-1 min-h-0 flex-1 space-y-2 overflow-y-auto rounded-xs border border-border bg-ink/55 p-2 sm:p-2.5 md:p-3"
                 aria-live="polite"
               >
                 {state.log.map((e, idx) => {
@@ -387,13 +450,19 @@ export function GameView(p: Props) {
                 </div>
               </div>
             ) : state.actReady ? (
-              <div className="border-t border-gold-deep pt-5">
-                <p className="mb-4 text-gold">{t("actDone", lang)}</p>
+              <div className="shrink-0 border-t border-gold-deep pt-3">
+                <p className="mb-2.5 text-sm sm:text-base text-gold">{t("actDone", lang)}</p>
                 <div className="flex flex-wrap items-center gap-3">
                   <Button
                     variant="pixel"
                     disabled={p.busy || p.canAdvance === false}
-                    onClick={p.onNextAct}
+                    onClick={() => {
+                      if (getInterludeForAct(state.actIndex + 1)) {
+                        setTransitionOpen(true);
+                      } else {
+                        p.onNextAct();
+                      }
+                    }}
                   >
                     {p.busy ? <LoaderCircle className="animate-spin" /> : null}
                     {t("continueAct", lang)} {ROMAN[state.actIndex + 2]} →
@@ -443,8 +512,12 @@ export function GameView(p: Props) {
             )}
           </div>
 
-          <aside className="flex flex-col gap-2.5 lg:min-h-0">
-            <div className="shrink-0 border border-border bg-card/40 p-2.5 sm:p-3">
+          <aside
+            className={`${mobileTab !== "turn" ? "flex" : "hidden"} h-full min-h-0 flex-col gap-2.5 lg:flex`}
+          >
+            <div
+              className={`${mobileTab === "party" ? "block" : "hidden"} shrink-0 border border-border bg-card/40 p-2.5 sm:p-3 lg:block overflow-y-auto`}
+            >
               <h2 className="mb-2 font-display text-[0.5rem] text-muted-foreground">
                 {t("party", lang)}
               </h2>
@@ -488,7 +561,11 @@ export function GameView(p: Props) {
                 ))}
               </div>
             </div>
-            <ChatPanel messages={p.chat} lang={lang} busy={p.chatBusy} onSend={p.onChat} />
+            <div
+              className={`${mobileTab === "chat" ? "flex" : "hidden"} min-h-0 flex-1 flex-col lg:flex`}
+            >
+              <ChatPanel messages={p.chat} lang={lang} busy={p.chatBusy} onSend={p.onChat} />
+            </div>
           </aside>
         </div>
       </div>
@@ -602,6 +679,20 @@ export function GameView(p: Props) {
         </div>
       )}
       <SoundSettingsModal open={soundModal} lang={lang} onClose={() => setSoundModal(false)} />
+      {transitionOpen && state.actReady && (
+        <ActTransition
+          targetActIndex={state.actIndex + 1}
+          party={state.party}
+          lang={lang}
+          busy={p.busy}
+          canChoose={p.canAdvance !== false}
+          onCancel={() => setTransitionOpen(false)}
+          onConfirm={(choiceId) => {
+            setTransitionOpen(false);
+            p.onNextAct(choiceId);
+          }}
+        />
+      )}
     </main>
   );
 }

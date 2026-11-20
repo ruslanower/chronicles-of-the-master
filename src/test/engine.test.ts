@@ -280,16 +280,18 @@ describe("Game engine, enemy AI & fallback narrator", () => {
     expect(next.log.some((e) => e.kind === "enemy")).toBe(true);
   });
 
-  it("heals party members by +4 HP during short rest between acts", () => {
+  it("heals party members by +4 HP during short rest between acts and applies interlude choices", () => {
     let state = newGame(["hero_forest_druid"], "uk", {}, () => 0.5);
     state = {
       ...state,
       actReady: true,
       party: state.party.map((h) => ({ ...h, hp: 5 })),
     };
-    const next = advanceAct(state, () => 0.5);
+    const next = advanceAct(state, () => 0.5, Date.now(), "sewer_hatch");
     expect(next.actIndex).toBe(1);
     expect(next.party[0]!.hp).toBe(9);
+    expect(next.actProgress).toBe(1);
+    expect(next.log.some((e) => e.kind === "master" && e.text.includes("каналізацію"))).toBe(true);
   });
 
   it("emits immediate mechanical progress before narrator finishes and varies narration with hero/ability details", async () => {

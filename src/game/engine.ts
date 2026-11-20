@@ -3,6 +3,7 @@ import type { Lang } from "./prologue";
 import type { HeroDef, Stats } from "./data";
 import { ABILITIES, ENCOUNTERS, itemHeal } from "./content";
 import { chooseTacticalEnemyDecision, getEnemyTactics, type EnemyDecision } from "./enemyAi";
+import { getInterludeForAct } from "./interludes";
 
 export type Rng = () => number;
 export type Status = {
@@ -837,14 +838,28 @@ export function appendLog(state: GameState, who: string, kind: LogKind, text: st
   return pushLog(state, who, kind, text);
 }
 
-/** Short rest between acts: conscious heroes recover +4 HP, unconscious heroes revive with 4 HP. */
-export function advanceAct(state: GameState, rng: Rng = Math.random, now = Date.now()): GameState {
+/** Short rest between acts: conscious heroes recover +4 HP, unconscious heroes revive with 4 HP, plus optional interlude choice effect. */
+export function advanceAct(
+  state: GameState,
+  rng: Rng = Math.random,
+  now = Date.now(),
+  choiceId?: string,
+): GameState {
   if (!state.actReady || state.status !== "playing") return state;
-  const restedParty = state.party.map((h) => ({
-    ...h,
-    hp: h.hp <= 0 ? Math.min(h.maxHp, 4) : Math.min(h.maxHp, h.hp + 4),
-  }));
-  let s = startAct({ ...state, party: restedParty, actReady: false }, state.actIndex + 1, rng, now);
+  const targetActIndex = state.actIndex + 1;
+  const interlude = getInterludeForAct(targetActIndex);
+  const chosen = choiceId ? interlude?.choices.find((c) => c.id === choiceId) : undefined;
+  const hpBonus = chosen?.effect.partyHpDelta ?? 0;
+
+  const restedParty = state.party.map((h) => {
+    const baseHp = h.hp <= 0 ? Math.min(h.maxHp, 4) : Math.min(h.maxHp, h.hp + 4);
+    return {
+      ...h,
+      hp: clamp(baseHp + hpBonus, 1, h.maxHp),
+    };
+  });
+
+  let s = startAct({ ...state, party: restedParty, actReady: false }, targetActIndex, rng, now);
   s = pushLog(
     s,
     L(s, "Табір", "Camp"),
@@ -855,6 +870,26 @@ export function advanceAct(state: GameState, rng: Rng = Math.random, now = Date.
       "Short rest between acts: party recovers +4 HP.",
     ),
   );
+
+  if (chosen) {
+    if (chosen.effect.startProgress) {
+      s = { ...s, actProgress: (s.actProgress ?? 0) + chosen.effect.startProgress };
+    }
+    if (chosen.effect.partyHidden || chosen.effect.partyShield) {
+      s = {
+        ...s,
+        party: s.party.map((h) => ({
+          ...h,
+          status: {
+            ...h.status,
+            ...(chosen.effect.partyHidden ? { hidden: 1, hiddenBy: h.id } : {}),
+            ...(chosen.effect.partyShield ? { shield: 1, shieldBy: h.id } : {}),
+          },
+        })),
+      };
+    }
+    s = pushLog(s, L(s, "Вибір загону", "Party Choice"), "master", chosen.effect.logNote[s.lang]);
+  }
   return s;
 }
 
