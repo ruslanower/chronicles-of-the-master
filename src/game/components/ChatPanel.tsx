@@ -36,14 +36,17 @@ export function ChatPanel({
   return (
     <section
       id="chat"
-      className="flex min-h-0 flex-col border border-border bg-card/40"
+      className="flex min-h-0 flex-1 flex-col border border-border bg-card/40"
       aria-label={t("chat", lang)}
     >
-      <div className="border-b border-border px-4 py-3">
-        <h2 className="font-display text-[0.6rem] text-gold">{t("chat", lang).toUpperCase()}</h2>
-        <p className="mt-1 text-xs text-muted-foreground">{t("chatHint", lang)}</p>
+      <div className="shrink-0 border-b border-border px-3 py-2">
+        <h2 className="font-display text-[0.55rem] text-gold">{t("chat", lang).toUpperCase()}</h2>
+        <p className="mt-0.5 text-[0.7rem] text-muted-foreground">{t("chatHint", lang)}</p>
       </div>
-      <div className="h-64 space-y-3 overflow-y-auto p-4 lg:h-80" aria-live="polite">
+      <div
+        className="h-56 space-y-2.5 overflow-y-auto p-3 lg:h-auto lg:min-h-0 lg:flex-1"
+        aria-live="polite"
+      >
         {messages.map((m) => (
           <div key={m.id} className={m.kind === "master" ? "border-l-2 border-gold pl-3" : ""}>
             <p className={`text-xs ${m.kind === "master" ? "text-gold" : "text-muted-foreground"}`}>
@@ -61,13 +64,13 @@ export function ChatPanel({
         <div ref={end} />
       </div>
       <form
-        className="border-t border-border p-3"
+        className="shrink-0 border-t border-border p-2.5"
         onSubmit={(e) => {
           e.preventDefault();
           send();
         }}
       >
-        <div className="mb-2 flex gap-2">
+        <div className="mb-1.5 flex gap-1.5">
           <Button
             type="button"
             size="sm"

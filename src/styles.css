@@ -83,9 +83,19 @@
   --input: oklch(0.3 0.05 290);
   --ring: var(--gold);
 
-  --gradient-night: radial-gradient(ellipse at top, oklch(0.24 0.08 300) 0%, var(--background) 60%, var(--ink) 100%);
+  --gradient-night: radial-gradient(
+    ellipse at top,
+    oklch(0.24 0.08 300) 0%,
+    var(--background) 60%,
+    var(--ink) 100%
+  );
   --gradient-gold: linear-gradient(180deg, oklch(0.9 0.13 88), var(--gold) 45%, var(--gold-deep));
-  --gradient-fade-up: linear-gradient(0deg, var(--ink) 0%, color-mix(in oklab, var(--ink) 70%, transparent) 40%, transparent 100%);
+  --gradient-fade-up: linear-gradient(
+    0deg,
+    var(--ink) 0%,
+    color-mix(in oklab, var(--ink) 70%, transparent) 40%,
+    transparent 100%
+  );
   --shadow-glow: 0 0 24px color-mix(in oklab, var(--gold) 45%, transparent);
   --shadow-astral: 0 0 30px color-mix(in oklab, var(--astral) 55%, transparent);
 }
@@ -101,8 +111,12 @@
     font-family: var(--font-pixel);
     -webkit-font-smoothing: none;
   }
-  body { margin: 0; }
-  * { letter-spacing: 0; }
+  body {
+    margin: 0;
+  }
+  * {
+    letter-spacing: 0;
+  }
   img.pixel,
   .pixel img {
     image-rendering: pixelated;
@@ -205,7 +219,11 @@
     position: absolute;
     inset: 0;
     pointer-events: none;
-    background: repeating-linear-gradient(0deg, color-mix(in oklab, var(--ink) 22%, transparent) 0 1px, transparent 1px 3px);
+    background: repeating-linear-gradient(
+      0deg,
+      color-mix(in oklab, var(--ink) 22%, transparent) 0 1px,
+      transparent 1px 3px
+    );
     mix-blend-mode: multiply;
   }
   .vignette::before {
@@ -214,7 +232,11 @@
     inset: 0;
     pointer-events: none;
     z-index: 1;
-    background: radial-gradient(ellipse at center, transparent 45%, color-mix(in oklab, var(--ink) 85%, transparent) 100%);
+    background: radial-gradient(
+      ellipse at center,
+      transparent 45%,
+      color-mix(in oklab, var(--ink) 85%, transparent) 100%
+    );
   }
   .hp-bar {
     height: 8px;
@@ -237,133 +259,369 @@
 }
 
 @keyframes bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-4px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-4px);
+  }
 }
 @keyframes blink {
-  50% { opacity: 0; }
+  50% {
+    opacity: 0;
+  }
 }
 @keyframes rain {
-  to { background-position: -40px 400px; }
+  to {
+    background-position: -40px 400px;
+  }
 }
 @keyframes float-up {
-  0% { transform: translateY(0); opacity: 0; }
-  20% { opacity: 1; }
-  100% { transform: translateY(-120px); opacity: 0; }
+  0% {
+    transform: translateY(0);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-120px);
+    opacity: 0;
+  }
 }
 @keyframes dice-spin {
-  0% { transform: rotate(0) scale(0.6); }
-  70% { transform: rotate(900deg) scale(1.15); }
-  100% { transform: rotate(1080deg) scale(1); }
+  0% {
+    transform: rotate(0) scale(0.6);
+  }
+  70% {
+    transform: rotate(900deg) scale(1.15);
+  }
+  100% {
+    transform: rotate(1080deg) scale(1);
+  }
 }
 @keyframes shake {
-  0%, 100% { transform: translate(0); }
-  25% { transform: translate(-4px, 2px); }
-  75% { transform: translate(4px, -2px); }
+  0%,
+  100% {
+    transform: translate(0);
+  }
+  25% {
+    transform: translate(-4px, 2px);
+  }
+  75% {
+    transform: translate(4px, -2px);
+  }
 }
 @keyframes act-in {
-  0% { opacity: 0; letter-spacing: 0.4em; }
-  100% { opacity: 1; letter-spacing: 0.05em; }
+  0% {
+    opacity: 0;
+    letter-spacing: 0.4em;
+  }
+  100% {
+    opacity: 1;
+    letter-spacing: 0.05em;
+  }
 }
 @keyframes pan {
-  0% { transform: scale(1.08) translateX(-1.5%); }
-  100% { transform: scale(1.08) translateX(1.5%); }
+  0% {
+    transform: scale(1.08) translateX(-1.5%);
+  }
+  100% {
+    transform: scale(1.08) translateX(1.5%);
+  }
 }
 @keyframes combat-pop {
-  0% { transform: translateY(6px) scale(0.7); opacity: 0; }
-  18% { transform: translateY(-6px) scale(1.15); opacity: 1; }
-  80% { transform: translateY(-24px) scale(1); opacity: 1; }
-  100% { transform: translateY(-34px) scale(0.95); opacity: 0; }
+  0% {
+    transform: translateY(6px) scale(0.7);
+    opacity: 0;
+  }
+  18% {
+    transform: translateY(-6px) scale(1.15);
+    opacity: 1;
+  }
+  80% {
+    transform: translateY(-24px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-34px) scale(0.95);
+    opacity: 0;
+  }
 }
 @keyframes lunge-right {
-  0% { transform: translateX(0) scale(1); }
-  28% { transform: translateX(28px) translateY(-6px) scale(1.1); }
-  55% { transform: translateX(16px) scale(1.05); }
-  100% { transform: translateX(0) scale(1); }
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  28% {
+    transform: translateX(28px) translateY(-6px) scale(1.1);
+  }
+  55% {
+    transform: translateX(16px) scale(1.05);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
 }
 @keyframes lunge-left {
-  0% { transform: translateX(0) scale(1); }
-  28% { transform: translateX(-28px) translateY(-6px) scale(1.1); }
-  55% { transform: translateX(-16px) scale(1.05); }
-  100% { transform: translateX(0) scale(1); }
+  0% {
+    transform: translateX(0) scale(1);
+  }
+  28% {
+    transform: translateX(-28px) translateY(-6px) scale(1.1);
+  }
+  55% {
+    transform: translateX(-16px) scale(1.05);
+  }
+  100% {
+    transform: translateX(0) scale(1);
+  }
 }
 @keyframes hit-recoil {
-  0% { transform: translate(0) scale(1); filter: brightness(1); }
-  18% { transform: translate(10px, -4px) scale(0.94); filter: brightness(2.2) saturate(1.8) drop-shadow(0 0 14px var(--hp)); }
-  38% { transform: translate(-8px, 3px) scale(1.04); filter: brightness(1.6) drop-shadow(0 0 12px var(--gold)); }
-  62% { transform: translate(6px, -2px) scale(0.98); filter: brightness(1.3); }
-  100% { transform: translate(0) scale(1); filter: brightness(1); }
+  0% {
+    transform: translate(0) scale(1);
+    filter: brightness(1);
+  }
+  18% {
+    transform: translate(10px, -4px) scale(0.94);
+    filter: brightness(2.2) saturate(1.8) drop-shadow(0 0 14px var(--hp));
+  }
+  38% {
+    transform: translate(-8px, 3px) scale(1.04);
+    filter: brightness(1.6) drop-shadow(0 0 12px var(--gold));
+  }
+  62% {
+    transform: translate(6px, -2px) scale(0.98);
+    filter: brightness(1.3);
+  }
+  100% {
+    transform: translate(0) scale(1);
+    filter: brightness(1);
+  }
 }
 @keyframes dodge-miss {
-  0% { transform: translateX(0) skewX(0deg); opacity: 1; }
-  25% { transform: translateX(-18px) translateY(-4px) skewX(-8deg); opacity: 0.55; filter: drop-shadow(12px 0 0 rgba(155, 93, 229, 0.55)); }
-  60% { transform: translateX(-12px) skewX(-4deg); opacity: 0.75; }
-  100% { transform: translateX(0) skewX(0deg); opacity: 1; }
+  0% {
+    transform: translateX(0) skewX(0deg);
+    opacity: 1;
+  }
+  25% {
+    transform: translateX(-18px) translateY(-4px) skewX(-8deg);
+    opacity: 0.55;
+    filter: drop-shadow(12px 0 0 rgba(155, 93, 229, 0.55));
+  }
+  60% {
+    transform: translateX(-12px) skewX(-4deg);
+    opacity: 0.75;
+  }
+  100% {
+    transform: translateX(0) skewX(0deg);
+    opacity: 1;
+  }
 }
 @keyframes slash-burst {
-  0% { transform: scale(0.35) rotate(-12deg); opacity: 0; }
-  20% { transform: scale(1.18) rotate(0deg); opacity: 1; }
-  65% { transform: scale(1.02) rotate(4deg); opacity: 0.9; }
-  100% { transform: scale(1.25) rotate(8deg); opacity: 0; }
+  0% {
+    transform: scale(0.35) rotate(-12deg);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.18) rotate(0deg);
+    opacity: 1;
+  }
+  65% {
+    transform: scale(1.02) rotate(4deg);
+    opacity: 0.9;
+  }
+  100% {
+    transform: scale(1.25) rotate(8deg);
+    opacity: 0;
+  }
 }
 @keyframes miss-whoosh {
-  0% { transform: translateX(-16px) scale(0.7); opacity: 0; }
-  25% { transform: translateX(4px) scale(1.08); opacity: 1; }
-  75% { transform: translateX(18px) scale(1); opacity: 0.85; }
-  100% { transform: translateX(28px) scale(0.9); opacity: 0; }
+  0% {
+    transform: translateX(-16px) scale(0.7);
+    opacity: 0;
+  }
+  25% {
+    transform: translateX(4px) scale(1.08);
+    opacity: 1;
+  }
+  75% {
+    transform: translateX(18px) scale(1);
+    opacity: 0.85;
+  }
+  100% {
+    transform: translateX(28px) scale(0.9);
+    opacity: 0;
+  }
 }
 @keyframes banner-flash {
-  0% { transform: translate(-50%, 10px) scale(0.65); opacity: 0; }
-  15% { transform: translate(-50%, 0) scale(1.12); opacity: 1; }
-  30% { transform: translate(-50%, 0) scale(1); opacity: 1; }
-  82% { transform: translate(-50%, -4px) scale(1); opacity: 1; }
-  100% { transform: translate(-50%, -14px) scale(0.92); opacity: 0; }
+  0% {
+    transform: translate(-50%, 10px) scale(0.65);
+    opacity: 0;
+  }
+  15% {
+    transform: translate(-50%, 0) scale(1.12);
+    opacity: 1;
+  }
+  30% {
+    transform: translate(-50%, 0) scale(1);
+    opacity: 1;
+  }
+  82% {
+    transform: translate(-50%, -4px) scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-50%, -14px) scale(0.92);
+    opacity: 0;
+  }
 }
 
-@utility animate-bob { animation: bob 1.6s steps(4) infinite; }
-@utility animate-blink { animation: blink 1s steps(1) infinite; }
-@utility animate-rain { animation: rain 0.6s linear infinite; }
-@utility animate-float-up { animation: float-up 4s linear infinite; }
-@utility animate-combat-pop { animation: combat-pop 2.2s ease-out forwards; }
-@utility animate-lunge-right { animation: lunge-right 0.65s cubic-bezier(.2,.9,.3,1) forwards; }
-@utility animate-lunge-left { animation: lunge-left 0.65s cubic-bezier(.2,.9,.3,1) forwards; }
-@utility animate-hit-recoil { animation: hit-recoil 0.6s ease-out forwards; }
-@utility animate-dodge-miss { animation: dodge-miss 0.65s ease-out forwards; }
-@utility animate-slash-burst { animation: slash-burst 0.75s ease-out forwards; }
-@utility animate-miss-whoosh { animation: miss-whoosh 0.8s ease-out forwards; }
-@utility animate-banner-flash { animation: banner-flash 1.85s ease-out forwards; }
-@utility animate-dice { animation: dice-spin 1.1s cubic-bezier(.2,.8,.2,1) forwards; }
-@utility animate-shake { animation: shake 0.25s steps(2) 3; }
-@utility animate-act-in { animation: act-in 1.2s ease-out forwards; }
-@utility animate-pan { animation: pan 30s ease-in-out infinite alternate; }
+@utility animate-bob {
+  animation: bob 1.6s steps(4) infinite;
+}
+@utility animate-blink {
+  animation: blink 1s steps(1) infinite;
+}
+@utility animate-rain {
+  animation: rain 0.6s linear infinite;
+}
+@utility animate-float-up {
+  animation: float-up 4s linear infinite;
+}
+@utility animate-combat-pop {
+  animation: combat-pop 2.2s ease-out forwards;
+}
+@utility animate-lunge-right {
+  animation: lunge-right 0.65s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+@utility animate-lunge-left {
+  animation: lunge-left 0.65s cubic-bezier(0.2, 0.9, 0.3, 1) forwards;
+}
+@utility animate-hit-recoil {
+  animation: hit-recoil 0.6s ease-out forwards;
+}
+@utility animate-dodge-miss {
+  animation: dodge-miss 0.65s ease-out forwards;
+}
+@utility animate-slash-burst {
+  animation: slash-burst 0.75s ease-out forwards;
+}
+@utility animate-miss-whoosh {
+  animation: miss-whoosh 0.8s ease-out forwards;
+}
+@utility animate-banner-flash {
+  animation: banner-flash 1.85s ease-out forwards;
+}
+@utility animate-dice {
+  animation: dice-spin 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+}
+@utility animate-shake {
+  animation: shake 0.25s steps(2) 3;
+}
+@utility animate-act-in {
+  animation: act-in 1.2s ease-out forwards;
+}
+@utility animate-pan {
+  animation: pan 30s ease-in-out infinite alternate;
+}
 
-.story-copy { font-family: "Ubuntu", sans-serif; }
-.game-scene { height: 480px; }
-.scene-unit { margin: 0 -10px; }
-.scene-hero { height: 260px; width: auto; max-width: none; }
-.scene-enemy { height: 245px; width: auto; max-width: none; }
-.scene-name { background: color-mix(in oklab, var(--ink) 85%, transparent); padding: 3px 6px; }
-.game-hp { appearance: none; height: 6px; border: 0; background: var(--ink); }
-.game-hp::-webkit-progress-bar { background: var(--ink); }
-.game-hp::-webkit-progress-value { background: var(--hp); }
-.game-hp::-moz-progress-bar { background: var(--hp); }
-.dice-face { background: var(--secondary); clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%); }
+.story-copy {
+  font-family: "Ubuntu", sans-serif;
+}
+.game-scene {
+  height: clamp(235px, 35vh, 360px);
+}
+.scene-unit {
+  margin: 0 -8px;
+}
+.scene-hero {
+  height: clamp(140px, 22vh, 215px);
+  width: auto;
+  max-width: none;
+}
+.scene-enemy {
+  height: clamp(132px, 20.5vh, 200px);
+  width: auto;
+  max-width: none;
+}
+.scene-name {
+  background: color-mix(in oklab, var(--ink) 85%, transparent);
+  padding: 3px 6px;
+}
+.game-hp {
+  appearance: none;
+  height: 6px;
+  border: 0;
+  background: var(--ink);
+}
+.game-hp::-webkit-progress-bar {
+  background: var(--ink);
+}
+.game-hp::-webkit-progress-value {
+  background: var(--hp);
+}
+.game-hp::-moz-progress-bar {
+  background: var(--hp);
+}
+.dice-face {
+  background: var(--secondary);
+  clip-path: polygon(25% 0, 75% 0, 100% 25%, 100% 75%, 75% 100%, 25% 100%, 0 75%, 0 25%);
+}
 
 @media (max-width: 767px) {
-  .game-scene { aspect-ratio: 4 / 3; height: auto; min-height: 245px; max-height: 360px; }
-  .scene-unit { margin: 0 1px; }
-  .scene-hero { height: clamp(68px, 18vw, 105px); width: auto; max-width: min(52px, 12vw); }
-  .scene-enemy { height: clamp(68px, 18vw, 102px); width: auto; max-width: min(56px, 13.5vw); }
-  .hp-bar { height: 5px; }
-  .scene-name { font-size: 0.42rem !important; padding: 1px 3px !important; }
-  .pixel-btn, .pixel-btn-ghost { font-size: 0.65rem; padding: 0.65rem 0.9rem; }
+  .game-scene {
+    aspect-ratio: 4 / 3;
+    height: auto;
+    min-height: 245px;
+    max-height: 360px;
+  }
+  .scene-unit {
+    margin: 0 1px;
+  }
+  .scene-hero {
+    height: clamp(68px, 18vw, 105px);
+    width: auto;
+    max-width: min(52px, 12vw);
+  }
+  .scene-enemy {
+    height: clamp(68px, 18vw, 102px);
+    width: auto;
+    max-width: min(56px, 13.5vw);
+  }
+  .hp-bar {
+    height: 5px;
+  }
+  .scene-name {
+    font-size: 0.42rem !important;
+    padding: 1px 3px !important;
+  }
+  .pixel-btn,
+  .pixel-btn-ghost {
+    font-size: 0.65rem;
+    padding: 0.65rem 0.9rem;
+  }
 }
 @media (min-width: 768px) and (max-width: 1024px) {
-  .game-scene { height: 380px; }
-  .scene-unit { margin: 0 -10px; }
-  .scene-hero { height: 200px; }
-  .scene-enemy { height: 190px; }
+  .game-scene {
+    height: 380px;
+  }
+  .scene-unit {
+    margin: 0 -10px;
+  }
+  .scene-hero {
+    height: 200px;
+  }
+  .scene-enemy {
+    height: 190px;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
 }

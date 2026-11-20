@@ -113,19 +113,19 @@ export function TurnPanel({
   ];
 
   return (
-    <div className="pixel-frame pixel-frame-gold p-4 md:p-5">
+    <div className="pixel-frame pixel-frame-gold p-3 md:p-3.5">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-display text-[0.6rem] text-gold">
+        <p className="font-display text-[0.55rem] sm:text-[0.6rem] text-gold">
           {t("yourTurn", lang).toUpperCase()} — {hero.name}
         </p>
         {busy && (
           <span className="flex items-center gap-2 text-xs text-astral">
-            <LoaderCircle className="h-4 w-4 animate-spin" />
+            <LoaderCircle className="h-3.5 w-3.5 animate-spin" />
             {t("masterThinking", lang)}
           </span>
         )}
       </div>
-      <div className="mt-3 md:mt-4 grid grid-cols-3 gap-1.5 md:gap-2" role="tablist">
+      <div className="mt-2 grid grid-cols-3 gap-1.5 md:gap-2" role="tablist">
         {tabs.map((x) => (
           <Button
             key={x.id}
@@ -133,7 +133,7 @@ export function TurnPanel({
             aria-selected={tab === x.id}
             variant="pixelGhost"
             data-active={tab === x.id}
-            className="relative px-1.5 sm:px-3 text-[0.6rem] sm:text-xs h-9 sm:h-10"
+            className="relative px-1.5 sm:px-3 text-[0.6rem] sm:text-xs h-8 sm:h-9"
             onClick={() => {
               playClickSound();
               setTab(x.id);
@@ -186,7 +186,7 @@ export function TurnPanel({
           </div>
         </div>
       ) : tab === "abilities" ? (
-        <div className="mt-3 md:mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+        <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-3 gap-2">
           {(ABILITIES[hero.id] ?? []).map((a) => {
             const Icon = ICON[a.kind];
             const cd = hero.cooldowns[a.id] ?? 0;
@@ -198,7 +198,7 @@ export function TurnPanel({
                 variant="ghost"
                 disabled={disabled}
                 onClick={() => pick(a)}
-                className="h-auto flex-col items-start gap-1 whitespace-normal border border-border bg-ink/50 p-2.5 sm:p-3 text-left hover:border-gold hover:bg-secondary"
+                className="h-auto flex-col items-start gap-0.5 whitespace-normal border border-border bg-ink/50 p-2 sm:p-2.5 text-left hover:border-gold hover:bg-secondary"
               >
                 <span className="flex items-center gap-1.5 text-xs sm:text-sm text-parchment font-medium">
                   <Icon className="h-4 w-4 text-gold shrink-0" />

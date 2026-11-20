@@ -148,8 +148,8 @@ export function GameView(p: Props) {
   if (!act) return null;
 
   return (
-    <main className="min-h-dvh bg-background">
-      <header className="flex items-center justify-between gap-3 border-b border-border px-3 py-2.5 md:px-8 md:py-3">
+    <main className="min-h-dvh bg-background lg:flex lg:h-dvh lg:flex-col lg:overflow-hidden">
+      <header className="shrink-0 flex items-center justify-between gap-3 border-b border-border px-3 py-1.5 md:px-6 md:py-2">
         <div className="flex items-center gap-2.5">
           <Button variant="ghost" size="icon" aria-label={t("mainMenu", lang)} onClick={p.onExit}>
             <ArrowLeft />
@@ -217,12 +217,14 @@ export function GameView(p: Props) {
         </div>
       </header>
 
-      <div className="mx-auto max-w-[1600px]">
-        <Scene state={state} lang={lang} busy={p.busy} />
+      <div className="mx-auto w-full max-w-[1600px] lg:flex lg:min-h-0 lg:flex-1 lg:flex-col">
+        <div className="shrink-0">
+          <Scene state={state} lang={lang} busy={p.busy} />
+        </div>
 
         {state.order.length > 1 && (
           <div
-            className="flex items-center gap-2 overflow-x-auto border-y border-border bg-ink px-3 py-2 md:px-8"
+            className="shrink-0 flex items-center gap-2 overflow-x-auto border-y border-border bg-ink px-3 py-1.5 md:px-6"
             aria-label={t("initiative", lang)}
           >
             <span className="shrink-0 font-display text-[0.5rem] text-muted-foreground">
@@ -236,14 +238,14 @@ export function GameView(p: Props) {
               return (
                 <div
                   key={id}
-                  className={`flex shrink-0 items-center gap-1 border px-2 py-1 text-xs ${cur ? "border-gold text-gold" : "border-border text-muted-foreground"} ${hp <= 0 ? "opacity-30 line-through" : ""}`}
+                  className={`flex shrink-0 items-center gap-1 border px-2 py-0.5 text-xs ${cur ? "border-gold text-gold" : "border-border text-muted-foreground"} ${hp <= 0 ? "opacity-30 line-through" : ""}`}
                 >
                   <img
                     src={h ? heroSprite(h.classKey, "front") : e?.sprite}
                     alt=""
                     width={240}
                     height={280}
-                    className="pixel h-6 w-5 object-contain"
+                    className="pixel h-5 w-4 object-contain"
                   />
                   <span className={e ? "text-hp" : ""}>
                     {(h?.name ?? e?.name ?? "").split(" ")[0]}
@@ -254,13 +256,13 @@ export function GameView(p: Props) {
           </div>
         )}
 
-        <div className="grid gap-5 p-3 md:p-6 lg:grid-cols-[1fr_360px]">
-          <div className="min-w-0 space-y-5">
-            <section aria-label={t("story", lang)}>
-              <div className="flex flex-wrap items-center justify-between gap-2 border border-border bg-ink/60 p-3 text-sm text-muted-foreground">
-                <div className="flex items-start gap-2">
-                  <Target className="mt-0.5 h-4 w-4 shrink-0 text-gold" />
-                  <span>
+        <div className="grid gap-3 p-2.5 md:p-3 lg:min-h-0 lg:flex-1 lg:grid-cols-[1fr_340px]">
+          <div className="min-w-0 flex flex-col gap-2.5 lg:min-h-0">
+            <section aria-label={t("story", lang)} className="flex flex-col lg:min-h-0 lg:flex-1">
+              <div className="shrink-0 flex flex-wrap items-center justify-between gap-2 border border-border bg-ink/60 px-3 py-1.5 text-xs sm:text-sm text-muted-foreground">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Target className="h-3.5 w-3.5 shrink-0 text-gold" />
+                  <span className="truncate">
                     <span className="text-gold">{t("actGoal", lang)}:</span> {act.objective}
                   </span>
                 </div>
@@ -275,26 +277,26 @@ export function GameView(p: Props) {
                   </div>
                 )}
               </div>
-              <div className="mt-3 flex gap-1">
+              <div className="mt-1.5 shrink-0 flex gap-1">
                 {campaignFor(lang).acts.map((a, i) => (
                   <span
                     key={a.actNumber}
-                    className={`h-1.5 flex-1 ${i < state.actIndex ? "bg-gold" : i === state.actIndex ? "bg-gold/50" : "bg-secondary"}`}
+                    className={`h-1 flex-1 ${i < state.actIndex ? "bg-gold" : i === state.actIndex ? "bg-gold/50" : "bg-secondary"}`}
                   />
                 ))}
               </div>
-              <div className="mt-4 flex items-center justify-between">
-                <h2 className="font-display text-[0.6rem] text-gold">
+              <div className="mt-2 shrink-0 flex items-center justify-between">
+                <h2 className="font-display text-[0.55rem] text-gold">
                   {t("masterTells", lang)} •{" "}
                   {lang === "en" ? "CHRONICLE OF ACTIONS" : "ІСТОРІЯ ДІЙ ТА СЛІВ МАЙСТРА"}
                 </h2>
-                <span className="font-display text-[0.5rem] text-muted-foreground">
+                <span className="font-display text-[0.48rem] text-muted-foreground">
                   {state.log.length} {lang === "en" ? "entries" : "записів"}
                 </span>
               </div>
 
               <div
-                className="mt-2.5 max-h-72 md:max-h-96 space-y-2.5 overflow-y-auto rounded-xs border border-border bg-ink/55 p-3 md:p-4"
+                className="mt-1.5 max-h-60 space-y-2 overflow-y-auto rounded-xs border border-border bg-ink/55 p-2.5 md:p-3 lg:min-h-0 lg:max-h-none lg:flex-1"
                 aria-live="polite"
               >
                 {state.log.map((e, idx) => {
@@ -441,38 +443,40 @@ export function GameView(p: Props) {
             )}
           </div>
 
-          <aside className="space-y-5">
-            <div className="border border-border bg-card/40 p-4">
-              <h2 className="mb-3 font-display text-[0.55rem] text-muted-foreground">
+          <aside className="flex flex-col gap-2.5 lg:min-h-0">
+            <div className="shrink-0 border border-border bg-card/40 p-2.5 sm:p-3">
+              <h2 className="mb-2 font-display text-[0.5rem] text-muted-foreground">
                 {t("party", lang)}
               </h2>
-              <div className="grid grid-cols-2 gap-3 lg:grid-cols-1">
+              <div className="grid grid-cols-2 gap-2">
                 {state.party.map((h) => (
                   <div
                     key={h.id}
-                    className={`flex items-center gap-3 border-l-2 py-1 pl-2 ${heroTurn?.id === h.id ? "border-gold bg-gold/5" : "border-transparent"}`}
+                    className={`flex items-center gap-2 border-l-2 py-0.5 pl-1.5 ${heroTurn?.id === h.id ? "border-gold bg-gold/5" : "border-transparent"}`}
                   >
                     <img
                       src={heroSprite(h.classKey, "front")}
                       alt=""
                       width={240}
                       height={280}
-                      className="pixel h-12 w-10 object-contain"
+                      className="pixel h-9 w-8 shrink-0 object-contain"
                     />
                     <div className="min-w-0 flex-1">
                       <p
-                        className={`truncate text-sm ${heroTurn?.id === h.id ? "text-gold" : "text-parchment"}`}
+                        className={`truncate text-xs ${heroTurn?.id === h.id ? "text-gold" : "text-parchment"}`}
                       >
-                        {h.name}
+                        {h.name.split(" ")[0]}
                       </p>
-                      {h.ownerName && <p className="truncate text-xs text-astral">{h.ownerName}</p>}
+                      {h.ownerName && (
+                        <p className="truncate text-[0.6rem] text-astral">{h.ownerName}</p>
+                      )}
                       <progress
-                        className="game-hp mt-1 w-full"
+                        className="game-hp mt-0.5 w-full"
                         value={h.hp}
                         max={h.maxHp}
                         aria-label={`HP ${h.name}`}
                       />
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-[0.65rem] text-muted-foreground">
                         ♥ {h.hp}/{h.maxHp}
                         {h.hp <= 0 ? ` • ${t("unconscious", lang)}` : ""}
                         {h.status.hidden ? ` • ${t("hidden", lang)}` : ""}
