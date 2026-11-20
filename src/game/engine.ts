@@ -71,6 +71,7 @@ export type MasterReply = {
   check: { stat: keyof Stats; dc: number } | null;
   hpChanges: { target: string; delta: number }[];
   actComplete: boolean;
+  progress?: boolean;
   suggestions: string[];
 };
 

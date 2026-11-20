@@ -85,11 +85,11 @@ export function SoloGame({
           }
           if (r.ok && !r.fromAi) {
             serverHasDedicatedAiRef.current = false;
-            serverAiBackoffUntilRef.current = Date.now() + 60_000;
+            serverAiBackoffUntilRef.current = Date.now() + 8_000;
           }
         } catch {
           serverHasDedicatedAiRef.current = false;
-          serverAiBackoffUntilRef.current = Date.now() + 60_000;
+          serverAiBackoffUntilRef.current = Date.now() + 8_000;
         }
       }
 

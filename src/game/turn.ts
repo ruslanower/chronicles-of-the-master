@@ -165,6 +165,18 @@ export async function playHeroTurn(
   if (action.type === "free") {
     const text = action.text.trim().slice(0, 600);
     if (!text) throw new Error("empty");
+    const lettersOnly = text.replace(/[^\p{L}]/gu, "");
+    const en = s.lang === "en";
+    if (lettersOnly.length < 3) {
+      s = appendLog({ ...s, lastEvents: [], lastRoll: null }, hero.name, "action", text);
+      s = appendMaster(
+        s,
+        en
+          ? `The Master raises an eyebrow at ${hero.name}'s meaningless gesture ("${text}"). Describe a real, concrete action!`
+          : `Майстер скептично хмуриться на незрозумілу репліку ${hero.name} («${text}»). Опишіть реальну, осмислену дію героя!`,
+      );
+      return s;
+    }
     const roll = d20(rng);
     s = appendLog({ ...s, lastEvents: [], lastRoll: null }, hero.name, "action", text);
     onProgress?.(s);
@@ -191,11 +203,11 @@ export async function playHeroTurn(
     }
 
     const freeEvents: CombatEvent[] = [];
-    if (reply.check) {
+    const allowsProgress = reply.progress !== false;
+    if (reply.check && allowsProgress) {
       const bonus = hero.stats[reply.check.stat] ?? 0;
       const dc = clamp(reply.check.dc, 5, 20);
       const ok = roll === 20 || (roll !== 1 && roll + bonus >= dc);
-      const en = s.lang === "en";
       s = {
         ...s,
         lastRoll: {
@@ -239,6 +251,14 @@ export async function playHeroTurn(
       if (ok && (s.enemies.length === 0 || isNonDamageObjectiveMove)) {
         s = { ...s, actProgress: (s.actProgress ?? 0) + 1 };
       }
+    } else if (!allowsProgress) {
+      freeEvents.push({
+        id: `free-invalid-${Date.now()}`,
+        targetId: hero.id,
+        attackerId: hero.id,
+        text: en ? "NO EFFECT" : "БЕЗ ЕФЕКТУ",
+        kind: "miss",
+      });
     } else if (s.enemies.length === 0) {
       s = { ...s, actProgress: (s.actProgress ?? 0) + 1 };
     }

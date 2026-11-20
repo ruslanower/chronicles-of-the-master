@@ -15,16 +15,18 @@ export const masterSchema = z.object({
     .default(null),
   hpChanges: z.array(z.object({ target: z.string(), delta: z.number() })).default([]),
   actComplete: z.boolean().default(false),
+  progress: z.boolean().optional().default(true),
   suggestions: z.array(z.string()).default([]),
 });
 
 const JSON_FORMAT_INSTRUCTION = `
 IMPORTANT: Return ONLY a valid JSON object (no markdown code fences, no extra text) with this exact structure:
 {
-  "narration": "string (2-4 atmospheric sentences in the requested language)",
+  "narration": "string (2-4 atmospheric sentences in the requested language reacting directly to the player's action)",
   "check": null or { "stat": "str" | "agi" | "int" | "cha", "dc": number },
   "hpChanges": [{ "target": "exact name", "delta": number }],
   "actComplete": boolean,
+  "progress": boolean,
   "suggestions": ["idea 1", "idea 2", "idea 3"]
 }`;
 
@@ -84,10 +86,12 @@ async function callLovableGateway(
 }
 
 const GEMINI_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-flash-latest",
-  "gemini-2.0-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemini-3.7-flash",
+  "gemini-3.5-flash",
+  "gemini-3.8-flash",
+  "gemma-4-31b-it",
 ];
 let preferredGeminiModel: string | null = null;
 const aiRawCache = new Map<string, string>();
@@ -122,6 +126,7 @@ async function callGeminiNativeRaw(
   for (const model of ordered) {
     if (signal.aborted) break;
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`;
+    const isGemma = model.startsWith("gemma-");
     try {
       const res = await fetch(url, {
         method: "POST",
@@ -129,13 +134,16 @@ async function callGeminiNativeRaw(
         body: JSON.stringify({
           contents: [{ parts: [{ text: `${system}\n\n${prompt}` }] }],
           generationConfig: {
-            responseMimeType: "application/json",
+            ...(isGemma ? {} : { responseMimeType: "application/json" }),
             temperature: 0.78,
           },
         }),
         signal,
       });
-      if (!res.ok) continue;
+      if (!res.ok) {
+        if (preferredGeminiModel === model) preferredGeminiModel = null;
+        continue;
+      }
       const data = (await res.json()) as {
         candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
       };
@@ -271,7 +279,7 @@ async function callRawTextWithTimeout(
 
   const { geminiKey, openaiKey, groqKey } = getServerKeys();
   const hasDedicatedKey = Boolean(geminiKey || openaiKey || groqKey || process.env["OLLAMA_MODEL"]);
-  const timeoutMs = hasDedicatedKey ? 6500 : freeTimeoutMs;
+  const timeoutMs = hasDedicatedKey ? 10_000 : freeTimeoutMs;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
@@ -345,7 +353,7 @@ export async function callMasterWithTimeout(
 ): Promise<MasterReply | null> {
   const { lovableKey, geminiKey, openaiKey, groqKey } = getServerKeys();
   const hasDedicatedKey = Boolean(lovableKey || geminiKey || openaiKey || groqKey);
-  const timeoutMs = hasDedicatedKey ? 8000 : 3200;
+  const timeoutMs = hasDedicatedKey ? 11_000 : 3500;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 

@@ -7,10 +7,11 @@ const AI_KEY_STORAGE = "chronicles-ai-key";
 const JSON_FORMAT_INSTRUCTION = `
 IMPORTANT: Return ONLY a valid JSON object (no markdown code fences, no extra text) with this exact structure:
 {
-  "narration": "string (2-4 atmospheric, varied sentences in the requested language, using concrete hero/enemy names)",
+  "narration": "string (2-4 atmospheric, varied sentences in the requested language reacting directly to the player's action)",
   "check": null or { "stat": "str" | "agi" | "int" | "cha", "dc": number },
   "hpChanges": [{ "target": "exact name", "delta": number }],
   "actComplete": boolean,
+  "progress": boolean,
   "suggestions": ["idea 1", "idea 2", "idea 3"]
 }`;
 
@@ -84,6 +85,7 @@ function parseClientMasterJson(raw: string): MasterReply | null {
       check,
       hpChanges,
       actComplete: Boolean(obj["actComplete"]),
+      progress: obj["progress"] === undefined ? true : Boolean(obj["progress"]),
       suggestions,
     };
   } catch {
@@ -119,10 +121,11 @@ async function fetchOpenAiContent(
 }
 
 const CLIENT_GEMINI_MODELS = [
-  "gemini-2.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-flash-latest",
-  "gemini-2.0-flash",
+  "gemini-3.5-flash-lite",
+  "gemini-3.1-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.8-flash",
+  "gemma-4-26b-a4b-it",
 ];
 let preferredClientGeminiModel: string | null = null;
 
@@ -159,7 +162,10 @@ async function fetchGeminiNativeContent(
           }),
           signal: controller.signal,
         });
-        if (!res.ok) continue;
+        if (!res.ok) {
+          if (preferredClientGeminiModel === model) preferredClientGeminiModel = null;
+          continue;
+        }
         const data = (await res.json()) as {
           candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
         };

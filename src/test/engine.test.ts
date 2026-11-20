@@ -408,4 +408,40 @@ describe("Game engine, enemy AI & fallback narrator", () => {
     const messages = await loadRoomMessages(code);
     expect(messages.some((m) => m.text === "Вітаю, Майстре!")).toBe(true);
   });
+
+  it("rejects gibberish/short free actions and respects AI progress=false without advancing actProgress", async () => {
+    let state = newGame(["hero_illusionist"], "uk", {}, () => 0.5);
+    state = startAct(state, 3, () => 0.5);
+    const narrate = vi.fn(async () => ({
+      narration:
+        "Тарганячий Король лише роздратовано клацає жвалами у відповідь на вашу нісенітницю.",
+      check: null,
+      hpChanges: [],
+      actComplete: false,
+      progress: false,
+      suggestions: [],
+    }));
+
+    // 1. Short gibberish ("В") is rejected immediately without consuming actProgress or calling AI
+    const afterShort = await playHeroTurn(
+      state,
+      "hero_illusionist",
+      { type: "free", text: "В" },
+      narrate,
+      () => 0.9,
+    );
+    expect(afterShort.actProgress).toBe(0);
+    expect(narrate).not.toHaveBeenCalled();
+
+    // 2. Absurd action rejected by AI (progress: false) does not increment actProgress
+    const afterAbsurd = await playHeroTurn(
+      state,
+      "hero_illusionist",
+      { type: "free", text: "покакати від страху" },
+      narrate,
+      () => 0.9,
+    );
+    expect(afterAbsurd.actProgress).toBe(0);
+    expect(narrate).toHaveBeenCalledTimes(1);
+  });
 });
