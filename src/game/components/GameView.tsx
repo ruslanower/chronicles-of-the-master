@@ -20,9 +20,11 @@ import { ACT_PROGRESS_GOAL, currentActor, TURN_SECONDS, type GameState } from ".
 import { getStoredAiKey, setStoredAiKey } from "../clientAi";
 import {
   isSoundMuted,
+  playAttackSound,
   playClickSound,
   playCritSound,
   playDefeatSound,
+  playHealSound,
   playMissSound,
   playVictorySound,
   setSoundMuted,
@@ -75,6 +77,11 @@ export function GameView(p: Props) {
   const left = useCountdown(state.turnStartedAt, !!p.timed && playing && !!heroTurn);
   const { onTimeout } = p;
   const lastSoundKeyRef = useRef("");
+  const logEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    logEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }, [state.log.length]);
 
   useEffect(() => {
     if (!p.timed || !playing || !heroTurn || left > 0 || !onTimeout) return undefined;
@@ -96,16 +103,12 @@ export function GameView(p: Props) {
     else if (state.status === "defeat") playDefeatSound();
     else if (state.actReady) playVictorySound();
     else if (state.lastEvents?.some((ev) => ev.kind === "crit")) playCritSound();
+    else if (state.lastEvents?.some((ev) => ev.kind === "dmg")) playAttackSound();
     else if (state.lastEvents?.some((ev) => ev.kind === "miss")) playMissSound();
+    else if (state.lastEvents?.some((ev) => ev.kind === "heal")) playHealSound();
   }, [state.status, state.actReady, state.actIndex, state.lastEvents]);
 
   if (!act) return null;
-  const latest = state.log.filter((e) => e.kind === "master").at(-1);
-  const recent = state.log
-    .slice(-6)
-    .filter(
-      (e) => e.kind === "roll" || e.kind === "enemy" || e.kind === "action" || e.kind === "system",
-    );
 
   function toggleMute() {
     const next = !muted;
@@ -240,24 +243,84 @@ export function GameView(p: Props) {
                   />
                 ))}
               </div>
-              <h2 className="mt-5 font-display text-[0.6rem] text-gold">
-                {t("masterTells", lang)}
-              </h2>
-              <p className="story-copy mt-3 text-base sm:text-lg leading-relaxed text-parchment md:text-xl">
-                {latest?.text ?? "…"}
-              </p>
-              {recent.length > 0 && (
-                <ul className="mt-3 space-y-1">
-                  {recent.map((e) => (
-                    <li
+              <div className="mt-4 flex items-center justify-between">
+                <h2 className="font-display text-[0.6rem] text-gold">
+                  {t("masterTells", lang)} •{" "}
+                  {lang === "en" ? "CHRONICLE OF ACTIONS" : "ІСТОРІЯ ДІЙ ТА СЛІВ МАЙСТРА"}
+                </h2>
+                <span className="font-display text-[0.5rem] text-muted-foreground">
+                  {state.log.length} {lang === "en" ? "entries" : "записів"}
+                </span>
+              </div>
+
+              <div
+                className="mt-2.5 max-h-72 md:max-h-96 space-y-2.5 overflow-y-auto rounded-xs border border-border bg-ink/55 p-3 md:p-4"
+                aria-live="polite"
+              >
+                {state.log.map((e, idx) => {
+                  const isLatestMaster =
+                    e.kind === "master" &&
+                    idx === state.log.map((x) => x.kind).lastIndexOf("master");
+                  if (e.kind === "master") {
+                    return (
+                      <div
+                        key={e.id}
+                        className={`rounded-xs border-l-3 border-gold bg-card/75 p-3 transition-colors ${isLatestMaster ? "ring-1 ring-gold/40" : "opacity-90"}`}
+                      >
+                        <p className="mb-1 flex items-center gap-1.5 font-display text-[0.52rem] text-gold">
+                          <span>👑 {e.who}</span>
+                        </p>
+                        <p className="story-copy text-base sm:text-lg leading-relaxed text-parchment">
+                          {e.text}
+                        </p>
+                      </div>
+                    );
+                  }
+                  if (e.kind === "action") {
+                    return (
+                      <div
+                        key={e.id}
+                        className="rounded-xs border-l-3 border-astral bg-astral/10 px-3 py-2"
+                      >
+                        <p className="font-display text-[0.5rem] text-astral">🗡 {e.who}</p>
+                        <p className="story-copy mt-0.5 text-sm sm:text-base text-parchment">
+                          «{e.text}»
+                        </p>
+                      </div>
+                    );
+                  }
+                  if (e.kind === "enemy") {
+                    return (
+                      <div
+                        key={e.id}
+                        className="rounded-xs border-l-3 border-hp bg-hp/10 px-3 py-2"
+                      >
+                        <p className="font-display text-[0.5rem] text-hp">⚔️ {e.who}</p>
+                        <p className="story-copy mt-0.5 text-sm text-parchment">{e.text}</p>
+                      </div>
+                    );
+                  }
+                  if (e.kind === "roll") {
+                    return (
+                      <div
+                        key={e.id}
+                        className="rounded-xs border border-gold/30 bg-ink/80 px-3 py-1.5 text-xs sm:text-sm text-gold"
+                      >
+                        🎲 {e.text}
+                      </div>
+                    );
+                  }
+                  return (
+                    <div
                       key={e.id}
-                      className={`text-sm ${e.kind === "enemy" ? "text-hp" : e.kind === "roll" ? "text-gold" : "text-muted-foreground"}`}
+                      className="py-1 text-center font-display text-[0.52rem] text-muted-foreground"
                     >
-                      {e.kind === "action" ? `${e.who}: ${e.text}` : e.text}
-                    </li>
-                  ))}
-                </ul>
-              )}
+                      ✦ {e.who}: {e.text} ✦
+                    </div>
+                  );
+                })}
+                <div ref={logEndRef} />
+              </div>
             </section>
 
             {state.status !== "playing" ? (
@@ -322,9 +385,11 @@ export function GameView(p: Props) {
               <div className="flex items-center gap-3 border border-border bg-card/40 p-4 text-parchment">
                 <LoaderCircle className="h-5 w-5 animate-spin text-astral" />
                 <span>
-                  {actor?.type === "enemy" || p.busy
-                    ? t("enemiesAct", lang)
-                    : `${t("waitingFor", lang)}: ${heroTurn?.ownerName ?? ""} (${heroTurn?.name ?? ""})`}
+                  {actor?.type === "enemy"
+                    ? `${t("enemiesAct", lang)} (${actor.enemy.name})`
+                    : p.busy
+                      ? t("masterThinking", lang)
+                      : `${t("waitingFor", lang)}: ${heroTurn?.ownerName ?? ""} (${heroTurn?.name ?? ""})`}
                   {p.timed && heroTurn ? ` • ${left}${t("seconds", lang)}` : ""}
                 </span>
               </div>

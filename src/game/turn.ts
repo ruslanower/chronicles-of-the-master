@@ -9,10 +9,12 @@ import {
   clamp,
   currentActor,
   d20,
+  enemyAct,
   resolveAbility,
   resolveItem,
   runEnemies,
   upcomingEnemyIds,
+  type CombatEvent,
   type GameState,
   type MasterReply,
   type Rng,
@@ -28,6 +30,9 @@ export type HeroAction =
   | { type: "skip" };
 
 export type Narrator = (state: GameState, req: NarrateRequest) => Promise<MasterReply>;
+
+const sleep = (ms: number) =>
+  ms > 0 ? new Promise<void>((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
 
 function applyReply(state: GameState, reply: MasterReply, kind: NarrateRequest["kind"]): GameState {
   let s = appendMaster(state, reply.narration);
@@ -66,8 +71,47 @@ async function resolveAiEnemyDecisions(
 }
 
 /**
- * Full hero turn: resolve the action, let Enemy AI run any enemy counter-turns,
- * and let the Master narrate in a single combined roundtrip for fast pacing.
+ * Step through consecutive enemy turns. When stepDelayMs > 0 and onProgress is provided,
+ * each enemy acts visibly one-by-one with a pause so the player can watch every attack and roll.
+ */
+async function runEnemiesPaced(
+  state: GameState,
+  rng: Rng,
+  now: number,
+  decisions: Record<string, EnemyDecision>,
+  onProgress?: (intermediate: GameState) => void,
+  stepDelayMs = 0,
+): Promise<{ state: GameState; summaries: string[] }> {
+  if (stepDelayMs <= 0 || !onProgress) {
+    const res = runEnemies(state, rng, now, decisions);
+    if (res.summaries.length) onProgress?.(res.state);
+    return res;
+  }
+
+  let s = state;
+  const summaries: string[] = [];
+  for (let guard = 0; guard < 20; guard++) {
+    if (s.status !== "playing" || s.actReady) break;
+    const a = currentActor(s);
+    if (!a || a.type !== "enemy") break;
+    if (a.enemy.hp > 0) {
+      // Highlight the acting enemy before they strike
+      onProgress({ ...s, lastEvents: [] });
+      await sleep(Math.min(420, Math.round(stepDelayMs * 0.35)));
+      const o = enemyAct(s, a.enemy.id, decisions[a.enemy.id], rng);
+      s = checkOutcome(o.state);
+      summaries.push(o.summary);
+      onProgress(s);
+      await sleep(stepDelayMs);
+    }
+    s = advance(s, now);
+  }
+  return { state: checkOutcome(s), summaries };
+}
+
+/**
+ * Full hero turn: resolve the action, show the hero's hit/miss animation,
+ * let Enemy AI run any enemy counter-turns with dramatic pacing, and let the Master narrate.
  */
 export async function playHeroTurn(
   state: GameState,
@@ -78,6 +122,7 @@ export async function playHeroTurn(
   now = Date.now(),
   onProgress?: (intermediate: GameState) => void,
   decideEnemies?: EnemyAiDecider,
+  stepDelayMs = 0,
 ): Promise<GameState> {
   const actor = currentActor(state);
   if (state.status !== "playing" || state.actReady) throw new Error("not playing");
@@ -90,16 +135,20 @@ export async function playHeroTurn(
       action.type === "ability"
         ? resolveAbility(s, heroId, action.abilityId, action.targetId, rng)
         : resolveItem(s, heroId, action.itemId, action.targetId);
-    s = advance(o.state, now);
-    // Immediately emit the hero's mechanical result so HP bars, floating damage, and D20 rolls appear with 0ms delay!
-    onProgress?.(s);
 
-    const decisions = await resolveAiEnemyDecisions(s, decideEnemies);
-    const enemies = runEnemies(s, rng, now, decisions);
+    // Emit the hero's mechanical result BEFORE advancing turn so the hero's lunge & target hit/miss animation play first!
+    onProgress?.(o.state);
+    const afterHero = advance(o.state, now);
+
+    // Fetch enemy AI decisions concurrently while the hero's attack animation plays
+    const [decisions] = await Promise.all([
+      resolveAiEnemyDecisions(afterHero, decideEnemies),
+      sleep(stepDelayMs > 0 ? Math.round(stepDelayMs * 0.85) : 0),
+    ]);
+
+    s = afterHero;
+    const enemies = await runEnemiesPaced(s, rng, now, decisions, onProgress, stepDelayMs);
     s = enemies.state;
-    if (enemies.summaries.length) {
-      onProgress?.(s);
-    }
 
     const combinedSummary = enemies.summaries.length
       ? `${o.summary}\n---\n${enemies.summaries.join("\n")}`
@@ -140,6 +189,8 @@ export async function playHeroTurn(
         ),
       };
     }
+
+    const freeEvents: CombatEvent[] = [];
     if (reply.check) {
       const bonus = hero.stats[reply.check.stat] ?? 0;
       const dc = clamp(reply.check.dc, 5, 20);
@@ -167,6 +218,22 @@ export async function playHeroTurn(
               (e) => e.id === c.target || e.name.toLowerCase() === c.target.trim().toLowerCase(),
             ),
         );
+        const failTarget = s.enemies.find((e) => e.hp > 0)?.id ?? hero.id;
+        freeEvents.push({
+          id: `free-miss-${Date.now()}`,
+          targetId: failTarget,
+          attackerId: hero.id,
+          text: en ? "MISS / FAIL" : "ПРОМАХ / НЕВДАЧА",
+          kind: "miss",
+        });
+      } else if (!reply.hpChanges.some((c) => c.delta < 0)) {
+        freeEvents.push({
+          id: `free-ok-${Date.now()}`,
+          targetId: hero.id,
+          attackerId: hero.id,
+          text: roll === 20 ? (en ? "CRIT SUCCESS!" : "КРИТ УСПІХ!") : en ? "SUCCESS!" : "УСПІХ!",
+          kind: roll === 20 ? "crit" : "status",
+        });
       }
       const isNonDamageObjectiveMove = !reply.hpChanges.some((c) => c.delta < 0);
       if (ok && (s.enemies.length === 0 || isNonDamageObjectiveMove)) {
@@ -175,14 +242,26 @@ export async function playHeroTurn(
     } else if (s.enemies.length === 0) {
       s = { ...s, actProgress: (s.actProgress ?? 0) + 1 };
     }
+    if (freeEvents.length) {
+      s = { ...s, lastEvents: freeEvents };
+    }
     s = applyReply(s, reply, "free");
+    onProgress?.(s);
+    if (
+      stepDelayMs > 0 &&
+      s.status === "playing" &&
+      !s.actReady &&
+      s.enemies.some((e) => e.hp > 0)
+    ) {
+      await sleep(stepDelayMs);
+    }
   } else {
     s = appendLog(s, hero.name, "system", s.lang === "en" ? "Skipped the turn" : "Пропустив хід");
   }
 
   s = advance(s, now);
   const decisions = await resolveAiEnemyDecisions(s, decideEnemies);
-  const enemies = runEnemies(s, rng, now, decisions);
+  const enemies = await runEnemiesPaced(s, rng, now, decisions, onProgress, stepDelayMs);
   s = enemies.state;
   if (enemies.summaries.length && s.status !== "victory") {
     onProgress?.(s);
@@ -210,11 +289,13 @@ export async function playOpeningEnemies(
   rng: Rng = Math.random,
   now = Date.now(),
   decideEnemies?: EnemyAiDecider,
+  onProgress?: (intermediate: GameState) => void,
+  stepDelayMs = 0,
 ): Promise<GameState> {
   const a = currentActor(state);
   if (!a || a.type !== "enemy") return state;
   const decisions = await resolveAiEnemyDecisions(state, decideEnemies);
-  const r = runEnemies(state, rng, now, decisions);
+  const r = await runEnemiesPaced(state, rng, now, decisions, onProgress, stepDelayMs);
   let s = r.state;
   if (r.summaries.length) {
     try {

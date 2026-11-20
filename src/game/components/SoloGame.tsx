@@ -186,9 +186,17 @@ export function SoloGame({
     if (openingRunKeyRef.current === key) return;
     openingRunKeyRef.current = key;
     void run(() =>
-      playOpeningEnemies(latestStateRef.current, narrate, Math.random, Date.now(), decideEnemies),
+      playOpeningEnemies(
+        latestStateRef.current,
+        narrate,
+        Math.random,
+        Date.now(),
+        decideEnemies,
+        onUpdate,
+        1050,
+      ),
     );
-  }, [actor?.type, busy, decideEnemies, narrate, run, state]);
+  }, [actor?.type, busy, decideEnemies, narrate, onUpdate, run, state]);
 
   async function sendChat(text: string, toMaster: boolean) {
     const mine: ChatMsg = {
@@ -260,6 +268,7 @@ export function SoloGame({
             Date.now(),
             onUpdate,
             decideEnemies,
+            1100,
           ),
         )
       }
@@ -272,6 +281,8 @@ export function SoloGame({
             Math.random,
             Date.now(),
             decideEnemies,
+            onUpdate,
+            1050,
           ),
         )
       }
@@ -283,6 +294,8 @@ export function SoloGame({
             Math.random,
             Date.now(),
             decideEnemies,
+            onUpdate,
+            1050,
           ),
         )
       }

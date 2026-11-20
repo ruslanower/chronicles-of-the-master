@@ -41,6 +41,7 @@ export type LogEntry = { id: number; who: string; kind: LogKind; text: string };
 export type CombatEvent = {
   id: string;
   targetId: string;
+  attackerId?: string;
   text: string;
   kind: "dmg" | "crit" | "miss" | "heal" | "status";
 };
@@ -395,6 +396,7 @@ export function resolveAbility(
       events.push({
         id: evId(),
         targetId: enemy.id,
+        attackerId: hero.id,
         text: r === 20 ? `КРИТ! -${dmg}` : `-${dmg}`,
         kind: r === 20 ? "crit" : "dmg",
       });
@@ -405,7 +407,13 @@ export function resolveAbility(
       );
     } else {
       detail = { actionKind: "attack", hit: false, crit: false };
-      events.push({ id: evId(), targetId: enemy.id, text: L(s, "ПРОМАХ", "MISS"), kind: "miss" });
+      events.push({
+        id: evId(),
+        targetId: enemy.id,
+        attackerId: hero.id,
+        text: L(s, "ПРОМАХ", "MISS"),
+        kind: "miss",
+      });
       summary = L(
         s,
         `${hero.name}: «${abName}» по ${enemy.name}. D20 ${r}${signed(bonus)} проти захисту ${ac} — ПРОМАХ${r === 1 ? " (критичний провал)" : ""}.`,
@@ -426,7 +434,13 @@ export function resolveAbility(
     const anyDefeated = defeatedTargets.length > 0;
     detail = { actionKind: "aoe", hit: true, defeated: anyDefeated, amount: dmg };
     for (const t of targets) {
-      events.push({ id: evId(), targetId: t.id, text: `-${dmg}`, kind: "dmg" });
+      events.push({
+        id: evId(),
+        targetId: t.id,
+        attackerId: hero.id,
+        text: `-${dmg}`,
+        kind: "dmg",
+      });
     }
     const defeatNote = anyDefeated
       ? L(
@@ -450,6 +464,7 @@ export function resolveAbility(
     events.push({
       id: evId(),
       targetId: enemy.id,
+      attackerId: hero.id,
       text: ok ? L(s, "ОГЛУШЕНИЙ!", "STUNNED!") : L(s, "ОПІР", "RESIST"),
       kind: ok ? "status" : "miss",
     });
@@ -582,6 +597,9 @@ export function applyMasterHp(
   limits: { heroMin: number; heroMax: number; enemyMin: number },
 ): GameState {
   let s = state;
+  const actor = currentActor(state);
+  const attackerId = actor?.type === "hero" ? actor.hero.id : undefined;
+  const isCrit = state.lastRoll?.value === 20;
   const events = [...(s.lastEvents ?? [])];
   for (const c of changes.slice(0, 6)) {
     if (!Number.isFinite(c.delta) || c.delta === 0) continue;
@@ -604,8 +622,9 @@ export function applyMasterHp(
         events.push({
           id: `m-${Date.now()}-${f.enemy.id}`,
           targetId: f.enemy.id,
-          text: `${clamped}`,
-          kind: "dmg",
+          ...(attackerId ? { attackerId } : {}),
+          text: isCrit ? `КРИТ! ${clamped}` : `${clamped}`,
+          kind: isCrit ? "crit" : "dmg",
         });
       }
     }
@@ -642,7 +661,7 @@ export function enemyAct(
     lastAiReason: chosen.reason,
     ...(chosen.bark ? { lastAiBark: chosen.bark } : {}),
   }));
-  const events = [...(s.lastEvents ?? [])];
+  const events: CombatEvent[] = [];
   const evId = () => `ea-${Date.now()}-${enemy.id}-${Math.random().toString(36).slice(2, 5)}`;
 
   // Defensive / self-sustain AI tactics
@@ -656,6 +675,7 @@ export function enemyAct(
     events.push({
       id: evId(),
       targetId: enemy.id,
+      attackerId: enemy.id,
       text: healAmt > 0 ? `+3 AC +${healAmt} HP` : "+3 AC",
       kind: "status",
     });
@@ -687,6 +707,7 @@ export function enemyAct(
       const r = d20(rng);
       const baseAc = tactic.ignoreShield ? 10 + target.stats.agi : heroAC(target);
       const hit = r === 20 || (r !== 1 && r + atkBonus >= baseAc);
+      s = { ...s, lastRoll: { value: r, bonus: atkBonus, total: r + atkBonus, label: tacticName } };
       if (hit) {
         hitCount++;
         const dmg = rollDice(tactic.dice ?? "1d4", rng).total * (r === 20 ? 2 : 1) + 1;
@@ -694,6 +715,7 @@ export function enemyAct(
         events.push({
           id: evId(),
           targetId: target.id,
+          attackerId: enemy.id,
           text: r === 20 ? `КРИТ! -${dmg}` : `-${dmg}`,
           kind: r === 20 ? "crit" : "dmg",
         });
@@ -702,6 +724,7 @@ export function enemyAct(
         events.push({
           id: evId(),
           targetId: target.id,
+          attackerId: enemy.id,
           text: L(s, "УХИЛЕННЯ", "DODGE"),
           kind: "miss",
         });
@@ -727,6 +750,7 @@ export function enemyAct(
   const r = d20(rng);
   const ac = heroAC(target);
   const hit = r === 20 || (r !== 1 && r + atkBonus >= ac);
+  s = { ...s, lastRoll: { value: r, bonus: atkBonus, total: r + atkBonus, label: tacticName } };
   let summary = "";
 
   if (hit) {
@@ -742,6 +766,7 @@ export function enemyAct(
       events.push({
         id: evId(),
         targetId: target.id,
+        attackerId: enemy.id,
         text: L(s, "ОГЛУШЕНИЙ!", "STUNNED!"),
         kind: "status",
       });
@@ -750,6 +775,7 @@ export function enemyAct(
     events.push({
       id: evId(),
       targetId: target.id,
+      attackerId: enemy.id,
       text: r === 20 ? `КРИТ! -${dmg}` : `-${dmg}`,
       kind: r === 20 ? "crit" : "dmg",
     });
@@ -759,7 +785,13 @@ export function enemyAct(
       `${enemy.name}${enraged ? " (enraged)" : ""}${aiTag} — "${tacticName}" on ${target.name}: D20 ${r}${signed(atkBonus)} vs defence ${ac} — hit, ${dmg} damage${left <= 0 ? `. ${target.name} falls unconscious!` : ` (HP ${left}/${target.maxHp})`}.${stunNote}${barkSuffix}`,
     );
   } else {
-    events.push({ id: evId(), targetId: target.id, text: L(s, "УХИЛЕННЯ", "DODGE"), kind: "miss" });
+    events.push({
+      id: evId(),
+      targetId: target.id,
+      attackerId: enemy.id,
+      text: L(s, "УХИЛЕННЯ", "DODGE"),
+      kind: "miss",
+    });
     summary = L(
       s,
       `${enemy.name}${aiTag} — «${tacticName}» по ${target.name}: D20 ${r}${signed(atkBonus)} проти захисту ${ac} — промах.${barkSuffix}`,
