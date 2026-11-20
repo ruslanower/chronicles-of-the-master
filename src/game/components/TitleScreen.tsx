@@ -1,13 +1,15 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { LoaderCircle, Users } from "lucide-react";
+import { LoaderCircle, Users, Volume2, VolumeX } from "lucide-react";
 import keyArt from "@/assets/key-art.webp";
 import { Button } from "@/components/ui/button";
 import { createRoom } from "@/lib/rooms.functions";
 import { campaignFor, t, type Lang } from "../i18n";
 import { saveCreds } from "../roomCreds";
+import { getAudioSettings, playClickSound, setMusicMood, subscribeAudioSettings } from "../sound";
 import { Particles } from "./Particles";
+import { SoundSettingsModal } from "./SoundSettingsModal";
 
 export function TitleScreen({
   lang,
@@ -25,8 +27,15 @@ export function TitleScreen({
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [soundModal, setSoundModal] = useState(false);
+  const [muted, setMuted] = useState(() => getAudioSettings().muted);
   const create = useServerFn(createRoom);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    setMusicMood("title");
+    return subscribeAudioSettings((s) => setMuted(s.muted));
+  }, []);
 
   async function onCreate() {
     if (!name.trim()) return;
@@ -63,17 +72,36 @@ export function TitleScreen({
       <div className="scanlines absolute inset-0" />
 
       <div
-        className="absolute right-4 top-4 z-20 flex gap-1"
+        className="absolute right-4 top-4 z-20 flex items-center gap-1.5"
         role="group"
         aria-label={t("language", lang)}
       >
+        <Button
+          variant="pixelGhost"
+          size="sm"
+          aria-label={t("sound", lang)}
+          title={lang === "en" ? "Sound & Music Settings" : "Налаштування звуку та музики"}
+          onClick={() => {
+            playClickSound();
+            setSoundModal(true);
+          }}
+        >
+          {muted ? (
+            <VolumeX className="h-4 w-4 text-hp" />
+          ) : (
+            <Volume2 className="h-4 w-4 text-gold" />
+          )}
+        </Button>
         {(["uk", "en"] as const).map((l) => (
           <Button
             key={l}
             variant="pixelGhost"
             data-active={lang === l}
             aria-pressed={lang === l}
-            onClick={() => onLang(l)}
+            onClick={() => {
+              playClickSound();
+              onLang(l);
+            }}
           >
             {l === "uk" ? "UA" : "EN"}
           </Button>
@@ -206,6 +234,7 @@ export function TitleScreen({
           {t("tagline", lang)}
         </p>
       </div>
+      <SoundSettingsModal open={soundModal} lang={lang} onClose={() => setSoundModal(false)} />
     </main>
   );
 }

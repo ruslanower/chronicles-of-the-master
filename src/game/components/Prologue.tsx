@@ -3,6 +3,7 @@ import { Gauge, Volume2, VolumeX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PROLOGUE, prologueAudio } from "../prologue";
 import { t, type Lang } from "../i18n";
+import { setMusicMood } from "../sound";
 
 const SPEEDS = [1.0, 1.25, 1.5] as const;
 
@@ -16,6 +17,10 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
   const slide = PROLOGUE[i]!;
   const text = slide.text[lang];
   const last = i === PROLOGUE.length - 1;
+
+  useEffect(() => {
+    setMusicMood("none");
+  }, []);
 
   useEffect(() => {
     setChars(0);

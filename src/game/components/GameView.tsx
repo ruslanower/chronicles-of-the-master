@@ -19,20 +19,24 @@ import { heroSprite } from "../data";
 import { ACT_PROGRESS_GOAL, currentActor, TURN_SECONDS, type GameState } from "../engine";
 import { getStoredAiKey, setStoredAiKey } from "../clientAi";
 import {
-  isSoundMuted,
+  getAudioSettings,
   playAttackSound,
+  playBuffSound,
   playClickSound,
   playCritSound,
   playDefeatSound,
+  playEnemyTurnSound,
   playHealSound,
   playMissSound,
   playVictorySound,
-  setSoundMuted,
+  setMusicMood,
+  subscribeAudioSettings,
 } from "../sound";
 import type { HeroAction } from "../turn";
 import { Scene } from "./Scene";
 import { TurnPanel } from "./TurnPanel";
 import { ChatPanel, type ChatMsg } from "./ChatPanel";
+import { SoundSettingsModal } from "./SoundSettingsModal";
 
 type Props = {
   state: GameState;
@@ -67,8 +71,9 @@ export function GameView(p: Props) {
   const { state, lang } = p;
   const [journal, setJournal] = useState(false);
   const [aiModal, setAiModal] = useState(false);
+  const [soundModal, setSoundModal] = useState(false);
   const [aiKeyInput, setAiKeyInput] = useState(() => getStoredAiKey());
-  const [muted, setMuted] = useState(() => isSoundMuted());
+  const [muted, setMuted] = useState(() => getAudioSettings().muted);
   const act = campaignFor(lang).acts[state.actIndex];
   const actor = currentActor(state);
   const heroTurn = actor?.type === "hero" ? actor.hero : null;
@@ -77,7 +82,38 @@ export function GameView(p: Props) {
   const left = useCountdown(state.turnStartedAt, !!p.timed && playing && !!heroTurn);
   const { onTimeout } = p;
   const lastSoundKeyRef = useRef("");
+  const lastActorIdRef = useRef("");
   const logEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    return subscribeAudioSettings((s) => setMuted(s.muted));
+  }, []);
+
+  // Adaptive background music mood per act and combat state
+  useEffect(() => {
+    if (!act) return;
+    const hasAliveEnemies = state.enemies.some((e) => e.hp > 0);
+    if (hasAliveEnemies && state.status === "playing" && !state.actReady) {
+      setMusicMood("combat");
+    } else if (act.bgType.includes("sewer") || act.bgType.includes("cockroach")) {
+      setMusicMood("dungeon");
+    } else if (act.bgType.includes("castle") || act.bgType.includes("stable")) {
+      setMusicMood("castle");
+    } else {
+      setMusicMood("title");
+    }
+  }, [act, state.enemies, state.status, state.actReady]);
+
+  // Subtle cue when an enemy steps up to take their turn
+  useEffect(() => {
+    const actorId = actor?.type === "enemy" ? actor.enemy.id : (actor?.hero.id ?? "");
+    if (actorId && actorId !== lastActorIdRef.current) {
+      lastActorIdRef.current = actorId;
+      if (actor?.type === "enemy") {
+        playEnemyTurnSound();
+      }
+    }
+  }, [actor]);
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
@@ -106,16 +142,10 @@ export function GameView(p: Props) {
     else if (state.lastEvents?.some((ev) => ev.kind === "dmg")) playAttackSound();
     else if (state.lastEvents?.some((ev) => ev.kind === "miss")) playMissSound();
     else if (state.lastEvents?.some((ev) => ev.kind === "heal")) playHealSound();
+    else if (state.lastEvents?.some((ev) => ev.kind === "status")) playBuffSound();
   }, [state.status, state.actReady, state.actIndex, state.lastEvents]);
 
   if (!act) return null;
-
-  function toggleMute() {
-    const next = !muted;
-    setMuted(next);
-    setSoundMuted(next);
-    if (!next) playClickSound();
-  }
 
   return (
     <main className="min-h-dvh bg-background">
@@ -155,11 +185,14 @@ export function GameView(p: Props) {
             variant="outline"
             size="icon"
             aria-label={t("sound", lang)}
-            aria-pressed={!muted}
-            onClick={toggleMute}
+            title={lang === "en" ? "Sound & Music Settings" : "Налаштування звуку та музики"}
+            onClick={() => {
+              playClickSound();
+              setSoundModal(true);
+            }}
           >
             {muted ? (
-              <VolumeX className="h-4 w-4 text-muted-foreground" />
+              <VolumeX className="h-4 w-4 text-hp" />
             ) : (
               <Volume2 className="h-4 w-4 text-gold" />
             )}
@@ -564,6 +597,7 @@ export function GameView(p: Props) {
           </section>
         </div>
       )}
+      <SoundSettingsModal open={soundModal} lang={lang} onClose={() => setSoundModal(false)} />
     </main>
   );
 }
