@@ -69,58 +69,81 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
   }
 
   return (
-    <main className="relative flex min-h-dvh flex-col justify-end overflow-hidden bg-ink select-none">
-      {PROLOGUE.map((s, k) =>
-        Math.abs(k - i) <= 1 ? (
-          <img
-            key={s.image}
-            src={s.image}
-            alt=""
-            width={1376}
-            height={768}
-            loading={k === i ? "eager" : "lazy"}
-            className={`pixel absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ${k === i ? "animate-pan opacity-85" : "opacity-0"}`}
-          />
-        ) : null,
-      )}
-      <div className="absolute inset-0 bg-fade-up opacity-90" />
-      <div className="scanlines absolute inset-0" />
-
-      {/* Top action controls */}
-      <div className="absolute right-3 top-3 z-20 flex items-center gap-1.5 md:right-6 md:top-6 md:gap-2">
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-9 px-2.5 font-display text-[0.6rem] text-gold border-border bg-ink/80 backdrop-blur-sm"
-          onClick={toggleSpeed}
-          title={lang === "en" ? "Voiceover speed" : "Швидкість озвучки"}
-        >
-          <Gauge className="mr-1 h-3.5 w-3.5 text-gold" />
-          {speed}x
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-9 w-9 border-border bg-ink/80 backdrop-blur-sm"
-          aria-label={t("sound", lang)}
-          aria-pressed={!muted}
-          onClick={() => setMuted((m) => !m)}
-        >
-          {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-gold" />}
-        </Button>
-        <Button
-          variant="pixelGhost"
-          size="sm"
-          className="h-9 text-[0.65rem] px-3 bg-ink/80 backdrop-blur-sm"
-          onClick={onDone}
-        >
-          {t("skip", lang)} ▶▶
-        </Button>
+    <main className="relative flex min-h-dvh flex-col justify-between md:justify-end overflow-hidden bg-ink select-none">
+      {/* Desktop full-bleed background illustration */}
+      <div className="hidden md:block">
+        {PROLOGUE.map((s, k) =>
+          Math.abs(k - i) <= 1 ? (
+            <img
+              key={s.image}
+              src={s.image}
+              alt=""
+              width={1376}
+              height={768}
+              loading={k === i ? "eager" : "lazy"}
+              className={`pixel absolute inset-0 h-full w-full object-cover object-center transition-opacity duration-1000 ${k === i ? "animate-pan opacity-85" : "opacity-0"}`}
+            />
+          ) : null,
+        )}
+        <div className="absolute inset-0 bg-fade-up opacity-90" />
+        <div className="scanlines absolute inset-0" />
       </div>
 
-      {/* Slide text card: fully optimized for mobile and desktop */}
-      <div className="relative z-10 mx-auto w-full max-w-3xl px-4 pb-8 md:px-6 md:pb-16">
-        <div className="pixel-frame pixel-frame-gold bg-ink/90 backdrop-blur-md p-4 sm:p-6 md:p-8">
+      {/* Top action controls (responsive on mobile & desktop) */}
+      <header className="relative z-20 flex items-center justify-between gap-2 px-3 pt-3 md:absolute md:right-6 md:top-6 md:justify-end md:p-0">
+        <span className="font-display text-[0.55rem] text-gold md:hidden">
+          {t("gameTitle", lang)} • {i + 1}/{PROLOGUE.length}
+        </span>
+        <div className="flex items-center gap-1.5 md:gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 md:h-9 px-2.5 font-display text-[0.55rem] md:text-[0.6rem] text-gold border-border bg-ink/85 backdrop-blur-sm"
+            onClick={toggleSpeed}
+            title={lang === "en" ? "Voiceover speed" : "Швидкість озвучки"}
+          >
+            <Gauge className="mr-1 h-3.5 w-3.5 text-gold" />
+            {speed}x
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8 md:h-9 md:w-9 border-border bg-ink/85 backdrop-blur-sm"
+            aria-label={t("sound", lang)}
+            aria-pressed={!muted}
+            onClick={() => setMuted((m) => !m)}
+          >
+            {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4 text-gold" />}
+          </Button>
+          <Button
+            variant="pixelGhost"
+            size="sm"
+            className="h-8 md:h-9 text-[0.6rem] md:text-[0.65rem] px-2.5 md:px-3 bg-ink/85 backdrop-blur-sm"
+            onClick={onDone}
+          >
+            {t("skip", lang)} ▶▶
+          </Button>
+        </div>
+      </header>
+
+      {/* Mobile dedicated 4:3 scene frame: shows 100% of the mobile-adapted artwork without cropping or covering */}
+      <div className="relative z-10 mx-auto mt-2 w-full px-3 md:hidden">
+        <div className="pixel-frame relative aspect-[4/3] w-full overflow-hidden bg-ink">
+          <img
+            key={slide.mobileImage}
+            src={slide.mobileImage}
+            alt=""
+            width={1200}
+            height={896}
+            className="pixel h-full w-full object-cover object-center"
+          />
+          <div className="scanlines absolute inset-0" />
+        </div>
+      </div>
+
+      {/* Slide text card: sits cleanly below illustration on mobile and floats at bottom on desktop */}
+      <div className="relative z-10 mx-auto mt-3 w-full max-w-3xl px-3 pb-5 md:mt-0 md:px-6 md:pb-16">
+        <div className="pixel-frame pixel-frame-gold bg-ink/95 backdrop-blur-md p-4 sm:p-6 md:p-8">
           <div className="mb-3 md:mb-5 flex items-center justify-between gap-2">
             <div className="flex flex-1 gap-1.5">
               {PROLOGUE.map((_, k) => (
@@ -136,7 +159,7 @@ export function Prologue({ lang, onDone }: { lang: Lang; onDone: () => void }) {
           </div>
 
           <p
-            className="story-copy min-h-24 sm:min-h-32 text-base sm:text-lg md:text-2xl leading-relaxed text-parchment"
+            className="story-copy min-h-24 sm:min-h-28 md:min-h-32 text-sm sm:text-lg md:text-2xl leading-relaxed text-parchment"
             style={{ textShadow: "1px 1px 0 var(--ink)" }}
             aria-live="polite"
           >

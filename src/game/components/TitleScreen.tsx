@@ -60,13 +60,16 @@ export function TitleScreen({
 
   return (
     <main className="relative min-h-dvh overflow-hidden bg-ink">
-      <img
-        src={keyArt}
-        alt=""
-        width={1920}
-        height={1088}
-        className="pixel absolute inset-0 h-full w-full animate-pan object-cover opacity-90"
-      />
+      <picture className="absolute inset-0 block h-full w-full">
+        <source media="(max-width: 767px)" srcSet="/game/key_art_mobile.jpg" />
+        <img
+          src={keyArt}
+          alt=""
+          width={1920}
+          height={1088}
+          className="pixel h-full w-full animate-pan object-cover object-center opacity-90"
+        />
+      </picture>
       <div className="absolute inset-0 bg-fade-up" />
       <Particles mood="rain" />
       <div className="scanlines absolute inset-0" />
@@ -108,34 +111,37 @@ export function TitleScreen({
         ))}
       </div>
 
-      <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-4 py-8 text-center">
-        <div className="mb-3 md:mb-4 flex flex-col items-center">
+      <div className="relative z-10 flex min-h-dvh flex-col items-center justify-center px-4 pt-16 pb-8 md:py-10 text-center">
+        <div className="mb-2.5 md:mb-4 flex flex-col items-center">
           <img
             src="/game/logo_astral_compass.jpg"
             alt={t("gameTitle", lang)}
             width={220}
             height={220}
-            className="pixel h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 rounded-full border-2 border-gold/80 object-cover shadow-[0_0_28px_color-mix(in_oklab,var(--gold)_45%,var(--astral))]"
+            className="pixel h-22 w-22 sm:h-32 sm:w-32 md:h-40 md:w-40 rounded-full border-2 border-gold/80 object-cover shadow-[0_0_28px_color-mix(in_oklab,var(--gold)_45%,var(--astral))]"
           />
         </div>
-        <p className="mb-2 md:mb-3 font-display text-[0.55rem] text-parchment/80 md:text-xs">
+        <p className="mb-1.5 md:mb-3 font-display text-[0.52rem] text-parchment/85 md:text-xs">
           {t("chapter", lang)}
         </p>
-        <h1 className="title-glow text-2xl sm:text-3xl md:text-5xl leading-tight md:leading-[1.4]">
+        <h1 className="title-glow text-xl sm:text-3xl md:text-5xl leading-tight md:leading-[1.4]">
           {t("gameTitle", lang)}
         </h1>
         <h2
-          className="mt-2 md:mt-3 font-display text-xs text-astral md:text-base"
+          className="mt-1.5 md:mt-3 font-display text-[0.65rem] sm:text-xs text-astral md:text-base"
           style={{ textShadow: "2px 2px 0 var(--ink)" }}
         >
           {t("gameSubtitle", lang)}
         </h2>
-        <p className="mt-3 md:mt-6 max-w-xl text-sm sm:text-base md:text-xl leading-snug text-parchment/90">
+        <p
+          className="mt-2.5 md:mt-6 max-w-xl rounded-xs bg-ink/45 px-3 py-1.5 backdrop-blur-[2px] text-xs sm:text-base md:text-xl leading-snug text-parchment/95 md:bg-transparent md:p-0 md:backdrop-blur-none"
+          style={{ textShadow: "1px 1px 0 var(--ink)" }}
+        >
           {campaignFor(lang).subtitle.split(".")[0]}.
         </p>
 
         {!online ? (
-          <div className="mt-6 md:mt-8 flex w-full max-w-sm flex-col gap-3 md:gap-4">
+          <div className="mt-5 md:mt-8 flex w-full max-w-xs sm:max-w-sm flex-col gap-2.5 md:gap-4">
             <Button variant="pixel" className="py-3 text-xs md:text-sm" onClick={onStart}>
               {t("newAdventure", lang)}
             </Button>
